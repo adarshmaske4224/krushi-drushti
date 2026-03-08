@@ -2,7 +2,10 @@ package com.example.KrushiMitra.dto;
 
 import lombok.*;
 
-@Data @AllArgsConstructor @NoArgsConstructor @Builder
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
 public class PestDetectionResponse {
     private Long reportId;
     private String pestName;

@@ -4,8 +4,12 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 
-@Entity @Table(name = "scheme_recommendations")
-@Data @NoArgsConstructor @AllArgsConstructor @Builder
+@Entity
+@Table(name = "scheme_recommendations")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class SchemeRecommendation {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)

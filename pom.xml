@@ -11,9 +11,9 @@
     </parent>
 
     <groupId>com.example</groupId>
-    <artifactId>KrushiMitra</artifactId>
+    <artifactId>krishidrishti</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>KrushiMitra</name>
+    <name>krishidrishti</name>
     <description>Smart Farming Assistance System</description>
 
     <properties>
@@ -84,6 +84,19 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <!-- ✅ Fix for MacOS Netty DNS resolver issue -->
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-resolver-dns-native-macos</artifactId>
+            <classifier>osx-aarch_64</classifier>
+        </dependency>
+
+        <dependency>
+            <groupId>com.twilio.sdk</groupId>
+            <artifactId>twilio</artifactId>
+            <version>9.10.0</version>
         </dependency>
 
     </dependencies>

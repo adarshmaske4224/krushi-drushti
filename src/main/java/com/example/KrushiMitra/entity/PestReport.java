@@ -4,8 +4,11 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 
-@Entity @Table(name = "pest_reports")
-@Data @NoArgsConstructor @AllArgsConstructor @Builder
+@Entity
+@Table(name = "pest_reports")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor @Builder
 
 public class PestReport {
 

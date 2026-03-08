@@ -17,7 +17,8 @@ public class CropPriceController {
     public ResponseEntity<CropPriceResponse> getPrice(
             @RequestParam String commodity,
             @RequestParam String state,
-            @RequestParam String market) {
-        return ResponseEntity.ok(cropPriceService.getCurrentPrice(commodity, state, market));
+            @RequestParam String market,
+            @RequestParam (required = false, defaultValue = "") String district) {
+        return ResponseEntity.ok(cropPriceService.getCurrentPrice(commodity, state, market, district));
     }
 }

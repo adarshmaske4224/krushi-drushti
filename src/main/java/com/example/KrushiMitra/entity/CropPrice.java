@@ -5,8 +5,12 @@ import lombok.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-@Entity @Table(name = "crop_prices")
-@Data @NoArgsConstructor @AllArgsConstructor @Builder
+@Entity
+@Table(name = "crop_prices")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class CropPrice {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)

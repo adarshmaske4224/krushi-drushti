@@ -17,6 +17,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
@@ -25,11 +26,13 @@ public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
     private final UserDetailsServiceImpl userDetailsService;
+    private CorsConfigurationSource corsConfigurationSource;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)          // ✅ disable CSRF for REST APIs
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // ✅ no sessions, JWT only
                 )
@@ -37,7 +40,10 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/auth/**",         // ✅ register, login — PUBLIC
                                 "/api/prices/**",       // ✅ crop prices — PUBLIC
-                                "/h2-console/**"        // ✅ H2 console if using H2
+                                "/h2-console/**",        // ✅ H2 console if using H2
+                                "/api/weather/**"
+
+
                         ).permitAll()
                         .anyRequest().authenticated() // everything else needs JWT
                 )

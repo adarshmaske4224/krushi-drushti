@@ -26,6 +26,7 @@ public class PestDetectionService {
     private final UserRepository userRepository;
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
+    private final SmsService smsService;
 
     @Value("${ai.api.url}")
     private String aiApiUrl;
@@ -53,8 +54,8 @@ public class PestDetectionService {
                 "text", buildPestPrompt(cropType, user.getPreferredLanguage())
         );
         Map<String, Object> imagePart = Map.of(
-                "inline_data", Map.of(
-                        "mime_type", mimeType,
+                "inlineData", Map.of(
+                        "mimeType", mimeType,
                         "data", base64Image
                 )
         );
@@ -101,8 +102,22 @@ public class PestDetectionService {
         report.setTreatmentRecommendation(treatment);
         report.setState(user.getState());
         report.setDistrict(user.getDistrict());
+
         PestReport saved = pestReportRepository.save(report);
 
+
+// 🔔 Send SMS alert to farmer
+        try {
+            smsService.sendSms(
+                    user.getPhone(),
+                    "⚠ krishidrishti Alert\n" +
+                            "Pest detected: " + pestName +
+                            "\nCrop: " + cropType +
+                            "\nTreatment: " + treatment
+            );
+        } catch (Exception e) {
+            System.out.println("SMS sending failed: " + e.getMessage());
+        }
         // Check district alert
         String alert = checkDistrictAlert(user.getDistrict(), pestName);
 

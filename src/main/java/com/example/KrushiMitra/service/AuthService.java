@@ -53,6 +53,14 @@ public class AuthService {
                 .fullName(user.getFullName())
                 .role(user.getRole().name())
                 .preferredLanguage(user.getPreferredLanguage())
+                .state(user.getState())               // ✅
+                .district(user.getDistrict())         // ✅
+                .village(user.getVillage())           // ✅
+                .primaryCrop(user.getPrimaryCrop())   // ✅
+                .landSizeAcres(user.getLandSizeAcres()) // ✅
+                .annualIncome(user.getAnnualIncome()) // ✅
+                .category(user.getCategory())         // ✅
+                .phone(user.getPhone())
                 .build();
     }
 
@@ -71,6 +79,15 @@ public class AuthService {
                 .fullName(user.getFullName())
                 .role(user.getRole().name())
                 .preferredLanguage(user.getPreferredLanguage())
+                .state(user.getState())               // ✅
+                .district(user.getDistrict())         // ✅
+                .village(user.getVillage())           // ✅
+                .primaryCrop(user.getPrimaryCrop())   // ✅
+                .landSizeAcres(user.getLandSizeAcres()) // ✅
+                .annualIncome(user.getAnnualIncome()) // ✅
+                .category(user.getCategory())         // ✅
+                .phone(user.getPhone())
+
                 .build();
     }
 }
