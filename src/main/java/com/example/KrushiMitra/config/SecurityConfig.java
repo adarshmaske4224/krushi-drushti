@@ -41,7 +41,8 @@ public class SecurityConfig {
                                 "/api/auth/**",         // ✅ register, login — PUBLIC
                                 "/api/prices/**",       // ✅ crop prices — PUBLIC
                                 "/h2-console/**",        // ✅ H2 console if using H2
-                                "/api/weather/**"
+                                "/api/weather/**",
+                                "/api/pest/**"
 
 
                         ).permitAll()

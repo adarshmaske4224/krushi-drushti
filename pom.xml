@@ -93,10 +93,11 @@
             <classifier>osx-aarch_64</classifier>
         </dependency>
 
+
         <dependency>
-            <groupId>com.twilio.sdk</groupId>
-            <artifactId>twilio</artifactId>
-            <version>9.10.0</version>
+            <groupId>me.paulschwarz</groupId>
+            <artifactId>spring-dotenv</artifactId>
+            <version>4.0.0</version>
         </dependency>
 
     </dependencies>
