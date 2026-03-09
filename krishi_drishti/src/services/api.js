@@ -24,7 +24,7 @@ api.interceptors.response.use(
 );
 
 export const authAPI = {
-  login:    (data) => api.post('/api/auth/login', data),
+  login: (data) => api.post('/api/auth/login', data),
   register: (data) => api.post('/api/auth/register', data),
 };
 
@@ -37,7 +37,7 @@ export const pestAPI = {
   detect: (formData) => api.post('/api/pest/detect', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
-  getHistory: ()         => api.get('/api/pest/history'),
+  getHistory: () => api.get('/api/pest/history'),
 };
 
 export const weatherAPI = {
@@ -46,19 +46,23 @@ export const weatherAPI = {
 };
 
 export const schemeAPI = {
-  getAll:             ()       => api.get('/api/schemes/all'),
-  getRecommendations: ()       => api.get('/api/schemes/recommendations'),
+  getAll: () => api.get('/api/schemes/all'),
+  getRecommendations: () => api.get('/api/schemes/recommendations'),
 };
 
 export const smsAPI = {
-  sendPestAlert:    (district, pestName, cropType) =>
+  sendPestAlert: (district, pestName, cropType) =>
     api.post('/api/sms/pest-alert', null, { params: { district, pestName, cropType } }),
-  sendPriceAlert:   (district, cropType, currentPrice, thresholdPrice) =>
+  sendPriceAlert: (district, cropType, currentPrice, thresholdPrice) =>
     api.post('/api/sms/price-alert', null, { params: { district, cropType, currentPrice, thresholdPrice } }),
   sendWeatherAlert: (district, condition, advice) =>
     api.post('/api/sms/weather-alert', null, { params: { district, condition, advice } }),
-  sendCustom:       (data) => api.post('/api/sms/send', data),
-  getHistory:       ()     => api.get('/api/sms/history'),
+  sendCustom: (data) => api.post('/api/sms/send', data),
+  getHistory: () => api.get('/api/sms/history'),
+};
+
+export const chatAPI = {
+  ask: (data) => api.post('/api/chat/ask', data),
 };
 
 export default api;

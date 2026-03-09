@@ -5,16 +5,16 @@ import { pestAPI, weatherAPI, schemeAPI, smsAPI } from '../services/api';
 
 // ===== PEST DETECTION PAGE =====
 export const PestDetection = () => {
-  const [file, setFile]         = useState(null);
-  const [preview, setPreview]   = useState('');
+  const [file, setFile] = useState(null);
+  const [preview, setPreview] = useState('');
   const [cropType, setCropType] = useState('Wheat');
-  const [result, setResult]     = useState(null);
-  const [history, setHistory]   = useState([]);
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState('');
+  const [result, setResult] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    pestAPI.getHistory().then(r => setHistory(r.data || [])).catch(() => {});
+    pestAPI.getHistory().then(r => setHistory(r.data || [])).catch(() => { });
   }, []);
 
   const onDrop = useCallback(files => {
@@ -38,7 +38,7 @@ export const PestDetection = () => {
     try {
       const res = await pestAPI.detect(fd);
       setResult(res.data);
-      pestAPI.getHistory().then(r => setHistory(r.data || [])).catch(() => {});
+      pestAPI.getHistory().then(r => setHistory(r.data || [])).catch(() => { });
     } catch (err) {
       setError(err.response?.data?.error || 'Detection failed. Try again.');
     } finally { setLoading(false); }
@@ -47,11 +47,13 @@ export const PestDetection = () => {
   const CROPS = ['Wheat', 'Rice', 'Onion', 'Tomato', 'Cotton', 'Soybean', 'Potato', 'Maize', 'Sugarcane'];
 
   return (
-    <div className="fade-in">
-      <div className="km-page-header">
-        <div className="km-breadcrumb">🏠 Home <i className="fas fa-chevron-right" style={{ fontSize: 8 }}></i> <span>Pest Detection</span></div>
-        <h1><i className="fas fa-bug me-2" style={{ color: 'var(--red-alert)' }}></i>AI Pest Detection</h1>
-        <p className="marathi">AI द्वारे कीड ओळख — फोटो अपलोड करा</p>
+    <div className="fade-in" id="pest-detection-page">
+      <div className="km-page-header d-flex justify-content-between align-items-start">
+        <div>
+          <div className="km-breadcrumb">🏠 Home <i className="fas fa-chevron-right" style={{ fontSize: 8 }}></i> <span>Pest Detection</span></div>
+          <h1><i className="fas fa-bug me-2 icon-spin-in" style={{ color: 'var(--red-alert)' }}></i>AI Pest Detection</h1>
+          <p className="marathi">AI द्वारे कीड ओळख — फोटो अपलोड करा</p>
+        </div>
       </div>
 
       <div className="row g-4">
@@ -89,7 +91,7 @@ export const PestDetection = () => {
             {error && <div className="km-alert error mb-3"><i className="fas fa-exclamation-circle me-2"></i>{error}</div>}
             <button className="btn-km-primary w-100 justify-content-center" onClick={handleDetect} disabled={loading || !file}>
               {loading ? <><span className="spinner-border spinner-border-sm me-2"></span>Analyzing with AI...</>
-                       : <><i className="fas fa-microscope"></i>Detect Pest / कीड ओळखा</>}
+                : <><i className="fas fa-microscope"></i>Detect Pest / कीड ओळखा</>}
             </button>
           </div>
         </div>
@@ -141,7 +143,7 @@ export const PestDetection = () => {
           <div className="km-card-header">
             <div className="km-card-icon earth"><i className="fas fa-history"></i></div>
             <div><h5 style={{ margin: 0 }}>Detection History</h5>
-            <small className="marathi" style={{ color: 'var(--text-light)' }}>मागील कीड अहवाल</small></div>
+              <small className="marathi" style={{ color: 'var(--text-light)' }}>मागील कीड अहवाल</small></div>
           </div>
           <div className="table-responsive">
             <table className="km-table">
@@ -168,11 +170,11 @@ export const PestDetection = () => {
 
 // ===== WEATHER PEST PREDICTION PAGE =====
 export const WeatherPestPrediction = () => {
-  const { user }              = useAuth();
-  const [form, setForm]       = useState({ district: user?.district || '', state: user?.state || 'Maharashtra', cropType: user?.primaryCrop || 'Wheat' });
-  const [data, setData]       = useState(null);
+  const { user } = useAuth();
+  const [form, setForm] = useState({ district: user?.district || '', state: user?.state || 'Maharashtra', cropType: user?.primaryCrop || 'Wheat' });
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState('');
+  const [error, setError] = useState('');
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   const handlePredict = async (e) => {
@@ -192,7 +194,7 @@ export const WeatherPestPrediction = () => {
     <div className="fade-in">
       <div className="km-page-header">
         <div className="km-breadcrumb">🏠 Home <i className="fas fa-chevron-right" style={{ fontSize: 8 }}></i> <span>Weather Alerts</span></div>
-        <h1><i className="fas fa-cloud-sun-rain me-2" style={{ color: 'var(--sky)' }}></i>Weather-Based Pest Prediction</h1>
+        <h1><i className="fas fa-cloud-sun-rain me-2 icon-spin-in" style={{ color: 'var(--sky)' }}></i>Weather-Based Pest Prediction</h1>
         <p className="marathi">हवामानावर आधारित कीड अंदाज</p>
       </div>
 
@@ -200,7 +202,7 @@ export const WeatherPestPrediction = () => {
         <div className="km-card-header">
           <div className="km-card-icon sky"><i className="fas fa-map-marker-alt"></i></div>
           <div><h5 style={{ margin: 0 }}>Select Location & Crop</h5>
-          <small className="marathi" style={{ color: 'var(--text-light)' }}>जिल्हा व पीक निवडा</small></div>
+            <small className="marathi" style={{ color: 'var(--text-light)' }}>जिल्हा व पीक निवडा</small></div>
         </div>
         <form onSubmit={handlePredict}>
           <div className="row g-3">
@@ -223,7 +225,7 @@ export const WeatherPestPrediction = () => {
           </div>
           <button type="submit" className="btn-km-primary mt-3" disabled={loading}>
             {loading ? <><span className="spinner-border spinner-border-sm me-2"></span>Analyzing...</>
-                     : <><i className="fas fa-cloud-sun-rain"></i>Predict Pests / अंदाज मिळवा</>}
+              : <><i className="fas fa-cloud-sun-rain"></i>Predict Pests / अंदाज मिळवा</>}
           </button>
         </form>
       </div>
@@ -242,9 +244,9 @@ export const WeatherPestPrediction = () => {
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 {[
-                  { icon: '💧', label: 'Humidity',   value: `${data.humidity?.toFixed(0)}%` },
-                  { icon: '🌧️', label: 'Rainfall',   value: `${data.rainfall?.toFixed(1)}mm` },
-                  { icon: '💨', label: 'Wind',        value: `${data.windSpeed?.toFixed(1)}km/h` },
+                  { icon: '💧', label: 'Humidity', value: `${data.humidity?.toFixed(0)}%` },
+                  { icon: '🌧️', label: 'Rainfall', value: `${data.rainfall?.toFixed(1)}mm` },
+                  { icon: '💨', label: 'Wind', value: `${data.windSpeed?.toFixed(1)}km/h` },
                   { icon: '⚠️', label: 'Risk Level', value: data.overallRiskLevel },
                 ].map((s, i) => (
                   <div key={i} style={{ background: 'rgba(255,255,255,0.15)', borderRadius: 8, padding: '8px 12px', textAlign: 'center' }}>
@@ -266,13 +268,15 @@ export const WeatherPestPrediction = () => {
             <div className="km-card-header">
               <div className="km-card-icon red"><i className="fas fa-bug"></i></div>
               <div><h5 style={{ margin: 0 }}>Predicted Pest Risks</h5>
-              <small className="marathi" style={{ color: 'var(--text-light)' }}>संभाव्य कीड धोके</small></div>
+                <small className="marathi" style={{ color: 'var(--text-light)' }}>संभाव्य कीड धोके</small></div>
             </div>
             <div className="row g-3">
               {data.predictions?.map((p, i) => (
                 <div className="col-md-6" key={i}>
-                  <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '1.25rem',
-                    borderLeft: `4px solid ${p.riskLevel === 'HIGH' || p.riskLevel === 'CRITICAL' ? 'var(--red-alert)' : p.riskLevel === 'MEDIUM' ? 'var(--gold)' : 'var(--green-primary)'}` }}>
+                  <div style={{
+                    border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '1.25rem',
+                    borderLeft: `4px solid ${p.riskLevel === 'HIGH' || p.riskLevel === 'CRITICAL' ? 'var(--red-alert)' : p.riskLevel === 'MEDIUM' ? 'var(--gold)' : 'var(--green-primary)'}`
+                  }}>
                     <div className="d-flex justify-content-between align-items-center mb-2">
                       <h6 style={{ margin: 0, fontWeight: 700 }}>{p.pestName}</h6>
                       {riskBadge(p.riskLevel)}
@@ -295,14 +299,14 @@ export const WeatherPestPrediction = () => {
 
 // ===== GOVERNMENT SCHEMES PAGE =====
 export const GovernmentSchemes = () => {
-  const [schemes, setSchemes]       = useState([]);
-  const [recs, setRecs]             = useState([]);
-  const [loading, setLoading]       = useState(true);
+  const [schemes, setSchemes] = useState([]);
+  const [recs, setRecs] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [recLoading, setRecLoading] = useState(false);
-  const [tab, setTab]               = useState('all');
+  const [tab, setTab] = useState('all');
 
   useEffect(() => {
-    schemeAPI.getAll().then(r => setSchemes(r.data || [])).catch(() => {}).finally(() => setLoading(false));
+    schemeAPI.getAll().then(r => setSchemes(r.data || [])).catch(() => { }).finally(() => setLoading(false));
   }, []);
 
   const loadRecs = async () => {
@@ -344,11 +348,13 @@ export const GovernmentSchemes = () => {
   );
 
   return (
-    <div className="fade-in">
-      <div className="km-page-header">
-        <div className="km-breadcrumb">🏠 Home <i className="fas fa-chevron-right" style={{ fontSize: 8 }}></i> <span>Government Schemes</span></div>
-        <h1><i className="fas fa-file-invoice me-2" style={{ color: 'var(--green-primary)' }}></i>Government Schemes</h1>
-        <p className="marathi">सरकारी योजना — आपल्यासाठी पात्र योजना पहा</p>
+    <div className="fade-in" id="gov-schemes-page">
+      <div className="km-page-header d-flex justify-content-between align-items-start">
+        <div>
+          <div className="km-breadcrumb">🏠 Home <i className="fas fa-chevron-right" style={{ fontSize: 8 }}></i> <span>Government Schemes</span></div>
+          <h1><i className="fas fa-file-invoice me-2 icon-spin-in" style={{ color: 'var(--green-primary)' }}></i>Government Schemes</h1>
+          <p className="marathi">सरकारी योजना — आपल्यासाठी पात्र योजना पहा</p>
+        </div>
       </div>
       <div className="d-flex gap-2 mb-4">
         <button onClick={() => setTab('all')} className={tab === 'all' ? 'btn-km-primary' : 'btn-km-secondary'}>
@@ -375,46 +381,48 @@ export const GovernmentSchemes = () => {
 
 // ===== SMS ALERTS PAGE — FARMER RECEIVES ALERTS =====
 export const SmsAlerts = () => {
-  const { user }                = useAuth();
-  const [history, setHistory]   = useState([]);
-  const [loading, setLoading]   = useState(true);
+  const { user } = useAuth();
+  const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [subscriptions, setSubscriptions] = useState({
     PEST_OUTBREAK: true,
     WEATHER_ALERT: true,
-    PRICE_ALERT:   true,
+    PRICE_ALERT: true,
     SCHEME_REMINDER: false,
   });
 
   useEffect(() => {
     smsAPI.getHistory()
       .then(r => setHistory(r.data || []))
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, []);
 
   const alertTypeConfig = {
-    PEST_OUTBREAK:   { icon: '🐛', label: 'Pest Outbreak',    labelMr: 'कीड उद्रेक',       color: '#c0392b', bg: '#fdecea' },
-    WEATHER_ALERT:   { icon: '🌦️', label: 'Weather Alert',   labelMr: 'हवामान सूचना',     color: '#1565a8', bg: '#e3f4f6' },
-    PRICE_ALERT:     { icon: '📈', label: 'Price Alert',      labelMr: 'भाव सूचना',        color: '#e8a820', bg: '#fef9e7' },
-    SCHEME_REMINDER: { icon: '📋', label: 'Scheme Reminder',  labelMr: 'योजना आठवण',       color: '#1a6b2f', bg: '#e8f5ec' },
-    CROP_ADVISORY:   { icon: '🌾', label: 'Crop Advisory',    labelMr: 'पीक सल्ला',        color: '#6b4c2a', bg: '#f5ede6' },
+    PEST_OUTBREAK: { icon: '🐛', label: 'Pest Outbreak', labelMr: 'कीड उद्रेक', color: '#c0392b', bg: '#fdecea' },
+    WEATHER_ALERT: { icon: '🌦️', label: 'Weather Alert', labelMr: 'हवामान सूचना', color: '#1565a8', bg: '#e3f4f6' },
+    PRICE_ALERT: { icon: '📈', label: 'Price Alert', labelMr: 'भाव सूचना', color: '#e8a820', bg: '#fef9e7' },
+    SCHEME_REMINDER: { icon: '📋', label: 'Scheme Reminder', labelMr: 'योजना आठवण', color: '#1a6b2f', bg: '#e8f5ec' },
+    CROP_ADVISORY: { icon: '🌾', label: 'Crop Advisory', labelMr: 'पीक सल्ला', color: '#6b4c2a', bg: '#f5ede6' },
   };
 
   const getConfig = type => alertTypeConfig[type] || { icon: '🔔', label: type, labelMr: '', color: '#666', bg: '#f5f5f5' };
 
   const stats = {
-    total:    history.length,
-    pest:     history.filter(h => h.alertType === 'PEST_OUTBREAK').length,
-    weather:  history.filter(h => h.alertType === 'WEATHER_ALERT').length,
-    price:    history.filter(h => h.alertType === 'PRICE_ALERT').length,
+    total: history.length,
+    pest: history.filter(h => h.alertType === 'PEST_OUTBREAK').length,
+    weather: history.filter(h => h.alertType === 'WEATHER_ALERT').length,
+    price: history.filter(h => h.alertType === 'PRICE_ALERT').length,
   };
 
   return (
-    <div className="fade-in">
-      <div className="km-page-header">
-        <div className="km-breadcrumb">🏠 Home <i className="fas fa-chevron-right" style={{ fontSize: 8 }}></i> <span>My Alerts</span></div>
-        <h1><i className="fas fa-bell me-2" style={{ color: 'var(--gold)' }}></i>My Alert Inbox</h1>
-        <p className="marathi">माझ्या सूचना — KrishiDrishti कडून मिळालेल्या सूचना</p>
+    <div className="fade-in" id="sms-alerts-page">
+      <div className="km-page-header d-flex justify-content-between align-items-start">
+        <div>
+          <div className="km-breadcrumb">🏠 Home <i className="fas fa-chevron-right" style={{ fontSize: 8 }}></i> <span>My Alerts</span></div>
+          <h1><i className="fas fa-bell me-2 icon-spin-in" style={{ color: 'var(--gold)' }}></i>My Alert Inbox</h1>
+          <p className="marathi">माझ्या सूचना — KrishiDrishti कडून मिळालेल्या सूचना</p>
+        </div>
       </div>
 
       {/* Info Banner */}
@@ -438,14 +446,14 @@ export const SmsAlerts = () => {
       </div>
 
       {/* Stats */}
-      <div className="row g-3 mb-4">
+      <div className="km-stats-grid">
         {[
-          { label: 'Total Alerts',   labelMr: 'एकूण सूचना',    value: stats.total,   icon: '🔔', color: 'green' },
-          { label: 'Pest Alerts',    labelMr: 'कीड सूचना',     value: stats.pest,    icon: '🐛', color: 'red'   },
-          { label: 'Weather Alerts', labelMr: 'हवामान सूचना', value: stats.weather, icon: '🌦️', color: 'sky'   },
-          { label: 'Price Alerts',   labelMr: 'भाव सूचना',    value: stats.price,   icon: '📈', color: 'gold'  },
+          { label: 'Total Alerts', labelMr: 'एकूण सूचना', value: stats.total, icon: '🔔', color: 'green' },
+          { label: 'Pest Alerts', labelMr: 'कीड सूचना', value: stats.pest, icon: '🐛', color: 'red' },
+          { label: 'Weather Alerts', labelMr: 'हवामान सूचना', value: stats.weather, icon: '🌦️', color: 'sky' },
+          { label: 'Price Alerts', labelMr: 'भाव सूचना', value: stats.price, icon: '📈', color: 'gold' },
         ].map((s, i) => (
-          <div className="col-md-3 col-6" key={i}>
+          <div className="stagger-enter" key={i}>
             <div className={`km-stat-card ${s.color}`}>
               <div className="stat-label">{s.label}<br /><span className="marathi" style={{ fontSize: '0.7rem' }}>{s.labelMr}</span></div>
               <div className="stat-value mt-1" style={{
@@ -585,7 +593,7 @@ export const SmsAlerts = () => {
             <div className="km-card-header">
               <div className="km-card-icon sky"><i className="fas fa-circle-info"></i></div>
               <div><h5 style={{ margin: 0 }}>How It Works</h5>
-              <small className="marathi" style={{ color: 'var(--text-light)' }}>कसे काम करते</small></div>
+                <small className="marathi" style={{ color: 'var(--text-light)' }}>कसे काम करते</small></div>
             </div>
             {[
               { step: '1', text: 'System monitors weather & pests daily', mr: 'दररोज हवामान व कीड तपासणी' },
@@ -617,18 +625,46 @@ export const SmsAlerts = () => {
 // ===== PROFILE PAGE =====
 export const ProfilePage = () => {
   const { user } = useAuth();
+  const [avatar, setAvatar] = useState(localStorage.getItem('km_avatar') || '');
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatar(reader.result);
+        localStorage.setItem('km_avatar', reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
     <div className="fade-in">
       <div className="km-page-header">
         <div className="km-breadcrumb">🏠 Home <i className="fas fa-chevron-right" style={{ fontSize: 8 }}></i> <span>Profile</span></div>
-        <h1><i className="fas fa-user-circle me-2" style={{ color: 'var(--green-primary)' }}></i>My Profile</h1>
+        <h1><i className="fas fa-user-circle me-2 icon-spin-in" style={{ color: 'var(--green-primary)' }}></i>My Profile</h1>
         <p className="marathi">माझी माहिती</p>
       </div>
       <div className="row g-4">
         <div className="col-md-4">
-          <div className="km-card text-center">
-            <div style={{ width: 90, height: 90, borderRadius: '50%', background: 'linear-gradient(135deg,var(--green-primary),var(--green-mid))',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', fontSize: '2.5rem', boxShadow: '0 8px 24px rgba(26,107,47,0.3)' }}>👨‍🌾</div>
+          <div className="km-card text-center stagger-enter">
+            <div className="profile-avatar-container" onClick={() => document.getElementById('avatar-input').click()}>
+              {avatar ? (
+                <img src={avatar} alt="Profile" className="profile-avatar" />
+              ) : (
+                <div className="profile-avatar" style={{
+                  background: 'linear-gradient(135deg,var(--green-primary),var(--green-mid))',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '2.5rem', color: 'white'
+                }}>👨‍🌾</div>
+              )}
+              <div className="profile-avatar-overlay">
+                <i className="fas fa-camera"></i>
+              </div>
+              <input type="file" id="avatar-input" className="profile-avatar-input"
+                accept="image/*" onChange={handleAvatarChange} />
+            </div>
             <h4 style={{ fontWeight: 800 }}>{user?.fullName || 'Farmer'}</h4>
             <p style={{ color: 'var(--text-light)', fontSize: '0.875rem' }}>{user?.email}</p>
             <span style={{ background: 'var(--green-pale)', color: 'var(--green-primary)', padding: '5px 16px', borderRadius: 20, fontSize: '0.82rem', fontWeight: 700 }}>{user?.role || 'FARMER'}</span>
@@ -646,17 +682,17 @@ export const ProfilePage = () => {
             </div>
             <div className="row g-0">
               {[
-                { icon: '👤', label: 'Full Name / नाव',            value: user?.fullName },
-                { icon: '📧', label: 'Email',                      value: user?.email },
-                { icon: '📞', label: 'Phone / फोन',                value: user?.phone || 'Not set' },
-                { icon: '🏛️', label: 'State / राज्य',             value: user?.state },
-                { icon: '📍', label: 'District / जिल्हा',          value: user?.district },
-                { icon: '🏘️', label: 'Village / गाव',             value: user?.village || 'Not set' },
-                { icon: '🌾', label: 'Primary Crop / मुख्य पीक',  value: user?.primaryCrop },
-                { icon: '📐', label: 'Land Size / जमीन',           value: `${user?.landSizeAcres} Acres` },
-                { icon: '💰', label: 'Annual Income / उत्पन्न',    value: `₹${user?.annualIncome?.toLocaleString()}` },
-                { icon: '🏷️', label: 'Category / प्रवर्ग',        value: user?.category },
-                { icon: '🌐', label: 'Language / भाषा',            value: user?.preferredLanguage === 'mr' ? 'मराठी' : 'English' },
+                { icon: '👤', label: 'Full Name / नाव', value: user?.fullName },
+                { icon: '📧', label: 'Email', value: user?.email },
+                { icon: '📞', label: 'Phone / फोन', value: user?.phone || 'Not set' },
+                { icon: '🏛️', label: 'State / राज्य', value: user?.state },
+                { icon: '📍', label: 'District / जिल्हा', value: user?.district },
+                { icon: '🏘️', label: 'Village / गाव', value: user?.village || 'Not set' },
+                { icon: '🌾', label: 'Primary Crop / मुख्य पीक', value: user?.primaryCrop },
+                { icon: '📐', label: 'Land Size / जमीन', value: `${user?.landSizeAcres} Acres` },
+                { icon: '💰', label: 'Annual Income / उत्पन्न', value: `₹${user?.annualIncome?.toLocaleString()}` },
+                { icon: '🏷️', label: 'Category / प्रवर्ग', value: user?.category },
+                { icon: '🌐', label: 'Language / भाषा', value: user?.preferredLanguage === 'mr' ? 'मराठी' : 'English' },
               ].map((f, i) => (
                 <div className="col-md-6" key={i}>
                   <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--border)', display: 'flex', gap: 10, alignItems: 'center' }}>
