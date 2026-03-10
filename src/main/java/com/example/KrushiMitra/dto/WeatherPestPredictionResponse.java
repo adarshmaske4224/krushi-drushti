@@ -12,6 +12,13 @@ public class WeatherPestPredictionResponse {
     private String generalAdvice;
     private List<PestPrediction> predictions;
 
+    private Double temperature;
+    private Double humidity;
+    private Double rainfall;
+    private Double windSpeed;
+    private String weatherCondition;
+    private String season;
+
     @Data
     @Builder
     public static class PestPrediction {

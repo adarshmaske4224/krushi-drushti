@@ -13,46 +13,50 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ChatbotService {
 
-    private final WebClient webClient;
-    private final ObjectMapper objectMapper;
+        private final WebClient webClient;
+        private final ObjectMapper objectMapper;
 
-    @Value("${ai.api.url}")
-    private String aiApiUrl;
+        @Value("${ai.api.url}")
+        private String aiApiUrl;
 
-    @Value("${ai.api.key}")
-    private String aiApiKey;
+        @Value("${ai.api.key}")
+        private String aiApiKey;
 
-    public String askGemini(String question, String lang) throws Exception {
-        String langNote = "mr".equalsIgnoreCase(lang) ? "Marathi" : "English";
-        String prompt = "You are 'KrishiDrishti AI Crop Doctor', a highly knowledgeable and friendly agricultural expert in India. "
-                + "A farmer has asked you a question. Please answer their question accurately and concisely, offering practical farming advice. "
-                + "Respond entirely in " + langNote + ".\n\n"
-                + "Farmer's question: " + question;
+        public String askGemini(String question, String lang) throws Exception {
+                String langNote = "mr".equalsIgnoreCase(lang) ? "Marathi" : "English";
+                String prompt = "You are 'KrishiDrishti AI Crop Doctor', an expert agricultural advisor in Maharashtra, India. "
+                                + "A farmer is asking you a question. They might type Marathi in English alphabet (Hinglish/Latin script). "
+                                + "You must understand their question but reply with a helpful, friendly, and practical answer. "
+                                + "Respond ONLY in " + langNote + ". "
+                                + ("mr".equalsIgnoreCase(lang)
+                                                ? "CRITICAL RULE: Your complete response MUST BE strictly written in proper Devanagari Marathi script (मराठी लिपी). Do NOT use English alphabets in your response."
+                                                : "")
+                                + "\n\nFarmer's Question: " + question;
 
-        Map<String, Object> textPart = Map.of("text", prompt);
-        Map<String, Object> requestBody = Map.of(
-                "contents", List.of(
-                        Map.of("parts", List.of(textPart))));
+                Map<String, Object> requestBody = Map.of(
+                                "model", "llama-3.1-8b-instant",
+                                "messages", List.of(
+                                                Map.of("role", "user", "content", prompt)));
 
-        String url = aiApiUrl + "?key=" + aiApiKey;
-        String responseBody;
-        try {
-            responseBody = webClient.post()
-                    .uri(url)
-                    .header("Content-Type", "application/json")
-                    .bodyValue(requestBody)
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .block();
-        } catch (org.springframework.web.reactive.function.client.WebClientResponseException e) {
-            System.err.println("Gemini Error Response: " + e.getResponseBodyAsString());
-            throw e;
+                String url = aiApiUrl;
+                String responseBody;
+                try {
+                        responseBody = webClient.post()
+                                        .uri(url)
+                                        .header("Content-Type", "application/json")
+                                        .header("Authorization", "Bearer " + aiApiKey)
+                                        .bodyValue(requestBody)
+                                        .retrieve()
+                                        .bodyToMono(String.class)
+                                        .block();
+                } catch (org.springframework.web.reactive.function.client.WebClientResponseException e) {
+                        System.err.println("Gemini Error Response: " + e.getResponseBodyAsString());
+                        throw e;
+                }
+
+                JsonNode root = objectMapper.readTree(responseBody);
+                return root.path("choices").get(0)
+                                .path("message")
+                                .path("content").asText();
         }
-
-        JsonNode root = objectMapper.readTree(responseBody);
-        return root.path("candidates").get(0)
-                .path("content")
-                .path("parts").get(0)
-                .path("text").asText();
-    }
 }

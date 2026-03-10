@@ -11,194 +11,273 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class WeatherPestService {
 
-    private final WebClient webClient;
-    private final ObjectMapper objectMapper;
-    private final SmsService smsService;
+        private final WebClient webClient;
+        private final ObjectMapper objectMapper;
+        private final SmsService smsService;
 
-    @Value("${weather.api.url}")
-    private String weatherApiUrl;
+        @Value("${weather.api.url}")
+        private String weatherApiUrl;
 
-    @Value("${ai.api.url}")
-    private String aiApiUrl;
+        @Value("${ai.api.url}")
+        private String aiApiUrl;
 
-    @Value("${ai.api.key}")
-    private String aiApiKey;
+        @Value("${ai.api.key}")
+        private String aiApiKey;
 
-    public WeatherPestPredictionResponse predictPests(
-            String district,
-            String state,
-            String cropType) throws Exception {
+        public WeatherPestPredictionResponse predictPests(
+                        String district,
+                        String state,
+                        String cropType) throws Exception {
 
-        double lat = 18.5204;
-        double lon = 73.8567;
+                double[] coords = getCoordinatesForDistrict(district);
+                double lat = coords[0];
+                double lon = coords[1];
 
-        String weatherUrl = UriComponentsBuilder
-                .fromHttpUrl(weatherApiUrl)
-                .queryParam("latitude", lat)
-                .queryParam("longitude", lon)
-                .queryParam("current",
-                        "temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m,weather_code")
-                .queryParam("timezone", "Asia/Kolkata")
-                .toUriString();
+                String weatherUrl = UriComponentsBuilder
+                                .fromHttpUrl(weatherApiUrl)
+                                .queryParam("latitude", lat)
+                                .queryParam("longitude", lon)
+                                .queryParam("current",
+                                                "temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m,weather_code")
+                                .queryParam("timezone", "Asia/Kolkata")
+                                .toUriString();
 
-        String weatherResponse = webClient.get()
-                .uri(weatherUrl)
-                .retrieve()
-                .bodyToMono(String.class)
-                .block();
+                String weatherResponse = webClient.get()
+                                .uri(weatherUrl)
+                                .retrieve()
+                                .bodyToMono(String.class)
+                                .block();
 
-        JsonNode root = objectMapper.readTree(weatherResponse);
-        JsonNode current = root.path("current");
+                JsonNode root = objectMapper.readTree(weatherResponse);
+                JsonNode current = root.path("current");
 
-        double temperature = current.path("temperature_2m").asDouble();
-        double humidity = current.path("relative_humidity_2m").asDouble();
-        double rainfall = current.path("precipitation").asDouble();
+                double temperature = current.path("temperature_2m").asDouble();
+                double humidity = current.path("relative_humidity_2m").asDouble();
+                double rainfall = current.path("precipitation").asDouble();
+                double windSpeed = current.path("wind_speed_10m").asDouble();
+                int weatherCode = current.path("weather_code").asInt();
+                String weatherCondition = mapWeatherCode(weatherCode);
+                String season = getSeason();
 
-        try {
+                try {
 
-            String prompt = """
-                    You are an agricultural expert.
+                        String prompt = """
+                                        You are an agricultural expert.
 
-                    Weather Conditions:
-                    Temperature: %s°C
-                    Humidity: %s%%
-                    Rainfall: %s mm
-                    Crop: %s
+                                        Weather Conditions:
+                                        Temperature: %s°C
+                                        Humidity: %s%%
+                                        Rainfall: %s mm
+                                        Crop: %s
 
-                    Predict pests likely in next 7 days.
+                                        Predict pests likely in next 7 days.
 
-                    Respond JSON:
-                    {
-                      "overallRiskLevel": "HIGH",
-                      "generalAdvice": "text",
-                      "predictions":[
-                        {
-                          "pestName":"name",
-                          "riskLevel":"HIGH",
-                          "reason":"reason",
-                          "preventiveMeasure":"solution"
+                                        Respond JSON:
+                                        {
+                                          "overallRiskLevel": "HIGH",
+                                          "generalAdvice": "text",
+                                          "predictions":[
+                                            {
+                                              "pestName":"name",
+                                              "riskLevel":"HIGH",
+                                              "reason":"reason",
+                                              "preventiveMeasure":"solution"
+                                            }
+                                          ]
+                                        }
+                                        """.formatted(temperature, humidity, rainfall, cropType);
+
+                        Map<String, Object> body = Map.of(
+                                        "model", "llama-3.1-8b-instant",
+                                        "messages", List.of(
+                                                        Map.of("role", "user", "content", prompt)));
+
+                        String aiUrl = aiApiUrl;
+
+                        String aiResponse = webClient.post()
+                                        .uri(aiUrl)
+                                        .header("Content-Type", "application/json")
+                                        .header("Authorization", "Bearer " + aiApiKey)
+                                        .bodyValue(body)
+                                        .retrieve()
+                                        .bodyToMono(String.class)
+                                        .block();
+
+                        JsonNode aiRoot = objectMapper.readTree(aiResponse);
+
+                        String aiText = aiRoot
+                                        .path("choices").get(0)
+                                        .path("message")
+                                        .path("content").asText();
+
+                        String cleanJson = aiText.replace("```json", "")
+                                        .replace("```", "")
+                                        .trim();
+
+                        JsonNode aiJson = objectMapper.readTree(cleanJson);
+
+                        WeatherPestPredictionResponse response = new WeatherPestPredictionResponse();
+
+                        response.setOverallRiskLevel(
+                                        aiJson.path("overallRiskLevel").asText());
+
+                        response.setGeneralAdvice(
+                                        aiJson.path("generalAdvice").asText());
+
+                        response.setTemperature(temperature);
+                        response.setHumidity(humidity);
+                        response.setRainfall(rainfall);
+                        response.setWindSpeed(windSpeed);
+                        response.setWeatherCondition(weatherCondition);
+                        response.setSeason(season);
+
+                        if ("HIGH".equalsIgnoreCase(response.getOverallRiskLevel())) {
+
+                                smsService.sendSms(
+                                                "+91XXXXXXXXXX",
+                                                "⚠ krishidrishti Weather Alert\n" +
+                                                                "High pest risk detected for crop: " + cropType +
+                                                                "\nInspect your crops immediately.");
                         }
-                      ]
-                    }
-                    """.formatted(temperature, humidity, rainfall, cropType);
 
-            Map<String, Object> body = Map.of(
-                    "contents", List.of(
-                            Map.of("parts", List.of(
-                                    Map.of("text", prompt)
-                            ))
-                    )
-            );
+                        return response;
 
-            String aiUrl = aiApiUrl + "?key=" + aiApiKey;
+                } catch (Exception e) {
 
-            String aiResponse = webClient.post()
-                    .uri(aiUrl)
-                    .header("Content-Type", "application/json")
-                    .bodyValue(body)
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .block();
+                        System.out.println("Gemini failed, using fallback prediction");
 
-            JsonNode aiRoot = objectMapper.readTree(aiResponse);
-
-            String aiText = aiRoot
-                    .path("candidates").get(0)
-                    .path("content")
-                    .path("parts").get(0)
-                    .path("text").asText();
-
-            String cleanJson = aiText.replace("```json", "")
-                    .replace("```", "")
-                    .trim();
-
-            JsonNode aiJson = objectMapper.readTree(cleanJson);
-
-            WeatherPestPredictionResponse response =
-                    new WeatherPestPredictionResponse();
-
-            response.setOverallRiskLevel(
-                    aiJson.path("overallRiskLevel").asText());
-
-            response.setGeneralAdvice(
-                    aiJson.path("generalAdvice").asText());
-
-            if ("HIGH".equalsIgnoreCase(response.getOverallRiskLevel())) {
-
-                smsService.sendSms(
-                        "+91XXXXXXXXXX",
-                        "⚠ krishidrishti Weather Alert\n" +
-                                "High pest risk detected for crop: " + cropType +
-                                "\nInspect your crops immediately."
-                );
-            }
-
-            return response;
-
-        } catch (Exception e) {
-
-            System.out.println("Gemini failed, using fallback prediction");
-
-            return fallbackPrediction(
-                    temperature,
-                    humidity,
-                    rainfall,
-                    cropType
-            );
-        }
-    }
-
-    private WeatherPestPredictionResponse fallbackPrediction(
-            double temperature,
-            double humidity,
-            double rainfall,
-            String cropType) {
-
-        WeatherPestPredictionResponse response = new WeatherPestPredictionResponse();
-
-        String risk = "LOW";
-        String pest = "None";
-        String reason = "Weather conditions are not favorable for major pests.";
-        String prevention = "Monitor crop regularly.";
-
-        if (humidity > 80 && temperature >= 20 && temperature <= 30) {
-            risk = "HIGH";
-            pest = "Aphids / Fungal Diseases";
-            reason = "High humidity and moderate temperature favor aphids and fungal growth.";
-            prevention = "Use neem oil spray or fungicide.";
+                        return fallbackPrediction(
+                                        temperature,
+                                        humidity,
+                                        rainfall,
+                                        windSpeed,
+                                        weatherCondition,
+                                        season,
+                                        cropType);
+                }
         }
 
-        else if (rainfall > 10) {
-            risk = "MEDIUM";
-            pest = "Root Rot / Bacterial Blight";
-            reason = "Excess rainfall can cause root diseases.";
-            prevention = "Improve soil drainage.";
+        private WeatherPestPredictionResponse fallbackPrediction(
+                        double temperature,
+                        double humidity,
+                        double rainfall,
+                        double windSpeed,
+                        String weatherCondition,
+                        String season,
+                        String cropType) {
+
+                WeatherPestPredictionResponse response = new WeatherPestPredictionResponse();
+
+                String risk = "LOW";
+                String pest = "None";
+                String reason = "Weather conditions are not favorable for major pests.";
+                String prevention = "Monitor crop regularly.";
+
+                if (humidity > 80 && temperature >= 20 && temperature <= 30) {
+                        risk = "HIGH";
+                        pest = "Aphids / Fungal Diseases";
+                        reason = "High humidity and moderate temperature favor aphids and fungal growth.";
+                        prevention = "Use neem oil spray or fungicide.";
+                }
+
+                else if (rainfall > 10) {
+                        risk = "MEDIUM";
+                        pest = "Root Rot / Bacterial Blight";
+                        reason = "Excess rainfall can cause root diseases.";
+                        prevention = "Improve soil drainage.";
+                }
+
+                else if (temperature > 35 && humidity < 40) {
+                        risk = "MEDIUM";
+                        pest = "Spider Mites / Thrips";
+                        reason = "Hot and dry weather encourages mites and thrips.";
+                        prevention = "Spray water on leaves.";
+                }
+
+                WeatherPestPredictionResponse.PestPrediction prediction = WeatherPestPredictionResponse.PestPrediction
+                                .builder()
+                                .pestName(pest)
+                                .riskLevel(risk)
+                                .reason(reason)
+                                .preventiveMeasure(prevention)
+                                .build();
+
+                response.setOverallRiskLevel(risk);
+                response.setGeneralAdvice("Monitor crop health regularly.");
+                response.setPredictions(List.of(prediction));
+                response.setTemperature(temperature);
+                response.setHumidity(humidity);
+                response.setRainfall(rainfall);
+                response.setWindSpeed(windSpeed);
+                response.setWeatherCondition(weatherCondition);
+                response.setSeason(season);
+
+                return response;
         }
 
-        else if (temperature > 35 && humidity < 40) {
-            risk = "MEDIUM";
-            pest = "Spider Mites / Thrips";
-            reason = "Hot and dry weather encourages mites and thrips.";
-            prevention = "Spray water on leaves.";
+        private String mapWeatherCode(int code) {
+                if (code == 0)
+                        return "Clear sky";
+                if (code <= 3)
+                        return "Partly cloudy";
+                if (code <= 48)
+                        return "Foggy";
+                if (code <= 57)
+                        return "Drizzle";
+                if (code <= 67)
+                        return "Rain";
+                if (code <= 77)
+                        return "Snow";
+                if (code <= 82)
+                        return "Showers";
+                if (code <= 99)
+                        return "Thunderstorm";
+                return "Unknown";
         }
 
-        WeatherPestPredictionResponse.PestPrediction prediction =
-                WeatherPestPredictionResponse.PestPrediction.builder()
-                        .pestName(pest)
-                        .riskLevel(risk)
-                        .reason(reason)
-                        .preventiveMeasure(prevention)
-                        .build();
+        private String getSeason() {
+                int month = java.time.LocalDate.now().getMonthValue();
+                if (month >= 6 && month <= 9)
+                        return "Kharif Season (Monsoon)";
+                if (month >= 10 || month <= 2)
+                        return "Rabi Season (Winter)";
+                return "Zaid Season (Summer)";
+        }
 
-        response.setOverallRiskLevel(risk);
-        response.setGeneralAdvice("Monitor crop health regularly.");
-        response.setPredictions(List.of(prediction));
+        private double[] getCoordinatesForDistrict(String district) {
+                try {
+                        String geoUrl = UriComponentsBuilder
+                                        .fromHttpUrl("https://geocoding-api.open-meteo.com/v1/search")
+                                        .queryParam("name", district)
+                                        .queryParam("count", 1)
+                                        .queryParam("language", "en")
+                                        .queryParam("format", "json")
+                                        .toUriString();
 
-        return response;
-    }
+                        String geoResponse = webClient.get()
+                                        .uri(geoUrl)
+                                        .retrieve()
+                                        .bodyToMono(String.class)
+                                        .block();
+
+                        JsonNode root = objectMapper.readTree(geoResponse);
+                        if (root.has("results") && root.path("results").isArray() && root.path("results").size() > 0) {
+                                JsonNode firstResult = root.path("results").get(0);
+                                double lat = firstResult.path("latitude").asDouble();
+                                double lon = firstResult.path("longitude").asDouble();
+                                return new double[] { lat, lon };
+                        }
+                } catch (Exception e) {
+                        System.err.println(
+                                        "Failed to fetch coordinates for district: " + district + ". Using default.");
+                }
+                // Default to Pune coordinates if not found
+                return new double[] { 18.5204, 73.8567 };
+        }
 }

@@ -31,19 +31,19 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable)          // ✅ disable CSRF for REST APIs
+                .csrf(AbstractHttpConfigurer::disable) // ✅ disable CSRF for REST APIs
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // ✅ no sessions, JWT only
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/api/auth/**",         // ✅ register, login — PUBLIC
-                                "/api/prices/**",       // ✅ crop prices — PUBLIC
-                                "/h2-console/**",        // ✅ H2 console if using H2
+                                "/api/auth/**", // ✅ register, login — PUBLIC
+                                "/api/prices/**", // ✅ crop prices — PUBLIC
+                                "/h2-console/**", // ✅ H2 console if using H2
                                 "/api/weather/**",
-                                "/api/pest/**"
-
+                                "/api/pest/**",
+                                "/api/chat/**" // ✅ ai crop doctor
 
                         ).permitAll()
                         .anyRequest().authenticated() // everything else needs JWT

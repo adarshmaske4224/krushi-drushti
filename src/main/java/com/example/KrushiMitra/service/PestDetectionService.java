@@ -22,154 +22,151 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class PestDetectionService {
 
-    private final PestReportRepository pestReportRepository;
-    private final UserRepository userRepository;
-    private final WebClient webClient;
-    private final ObjectMapper objectMapper;
-    private final SmsService smsService;
+        private final PestReportRepository pestReportRepository;
+        private final UserRepository userRepository;
+        private final WebClient webClient;
+        private final ObjectMapper objectMapper;
+        private final SmsService smsService;
 
-    @Value("${ai.api.url}")
-    private String aiApiUrl;
+        @Value("${gemini.vision.url}")
+        private String geminiVisionUrl;
 
-    @Value("${ai.api.key}")
-    private String aiApiKey;
+        @Value("${gemini.vision.key}")
+        private String geminiVisionKey;
 
-    public PestDetectionResponse detectPest(MultipartFile imageFile,
-                                            String cropType) throws Exception {
-        // Get logged in user
-        String email = SecurityContextHolder.getContext()
-                .getAuthentication().getName();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        public PestDetectionResponse detectPest(MultipartFile imageFile,
+                        String cropType) throws Exception {
+                // Get logged in user
+                String email = SecurityContextHolder.getContext()
+                                .getAuthentication().getName();
+                User user = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Convert image to Base64
-        String base64Image = Base64.getEncoder()
-                .encodeToString(imageFile.getBytes());
-        String mimeType = imageFile.getContentType() != null
-                ? imageFile.getContentType() : "image/jpeg";
+                // Convert image to Base64
+                String base64Image = Base64.getEncoder()
+                                .encodeToString(imageFile.getBytes());
+                String mimeType = imageFile.getContentType() != null
+                                ? imageFile.getContentType()
+                                : "image/jpeg";
 
-        // Build Gemini API request
-        // Gemini accepts: { contents: [{ parts: [{ text }, { inlineData }] }] }
-        Map<String, Object> textPart = Map.of(
-                "text", buildPestPrompt(cropType, user.getPreferredLanguage())
-        );
-        Map<String, Object> imagePart = Map.of(
-                "inlineData", Map.of(
-                        "mimeType", mimeType,
-                        "data", base64Image
-                )
-        );
-        Map<String, Object> requestBody = Map.of(
-                "contents", List.of(
-                        Map.of("parts", List.of(textPart, imagePart))
-                )
-        );
+                // Build Gemini Vision API request
+                Map<String, Object> textPart = Map.of(
+                                "text", buildPestPrompt(cropType, user.getPreferredLanguage()));
+                Map<String, Object> imagePart = Map.of(
+                                "inlineData", Map.of(
+                                                "mimeType", mimeType,
+                                                "data", base64Image));
+                Map<String, Object> requestBody = Map.of(
+                                "contents", List.of(
+                                                Map.of("parts", List.of(textPart, imagePart))));
 
-        // Call Gemini API
-        String url = aiApiUrl + "?key=" + aiApiKey;
-        String responseBody = webClient.post()
-                .uri(url)
-                .header("Content-Type", "application/json")
-                .bodyValue(requestBody)
-                .retrieve()
-                .bodyToMono(String.class)
-                .block();
+                // Call Gemini API
+                String url = geminiVisionUrl + "?key=" + geminiVisionKey;
+                String responseBody = webClient.post()
+                                .uri(url)
+                                .header("Content-Type", "application/json")
+                                .bodyValue(requestBody)
+                                .retrieve()
+                                .bodyToMono(String.class)
+                                .block();
 
-        // Parse Gemini response
-        // Response format: candidates[0].content.parts[0].text
-        JsonNode root = objectMapper.readTree(responseBody);
-        String aiText = root
-                .path("candidates").get(0)
-                .path("content")
-                .path("parts").get(0)
-                .path("text").asText();
+                // Parse Gemini response
+                // Response format: candidates[0].content.parts[0].text
+                JsonNode root = objectMapper.readTree(responseBody);
+                String aiText = root
+                                .path("candidates").get(0)
+                                .path("content")
+                                .path("parts").get(0)
+                                .path("text").asText();
 
-        // Extract fields from AI response
-        String pestName   = extractField(aiText, "PEST_NAME");
-        String confStr    = extractField(aiText, "CONFIDENCE")
-                .replace("%", "").trim();
-        double confidence = 0.0;
-        try { confidence = Double.parseDouble(confStr); }
-        catch (Exception ignored) { confidence = 80.0; }
-        String treatment  = extractField(aiText, "TREATMENT");
+                // Extract fields from AI response
+                String pestName = extractField(aiText, "PEST_NAME");
+                String confStr = extractField(aiText, "CONFIDENCE")
+                                .replace("%", "").trim();
+                double confidence = 0.0;
+                try {
+                        confidence = Double.parseDouble(confStr);
+                } catch (Exception ignored) {
+                        confidence = 80.0;
+                }
+                String treatment = extractField(aiText, "TREATMENT");
 
-        // Save to DB
-        PestReport report = new PestReport();
-        report.setUser(user);
-        report.setCropType(cropType);
-        report.setPestName(pestName);
-        report.setConfidencePercent(confidence);
-        report.setTreatmentRecommendation(treatment);
-        report.setState(user.getState());
-        report.setDistrict(user.getDistrict());
+                // Save to DB
+                PestReport report = new PestReport();
+                report.setUser(user);
+                report.setCropType(cropType);
+                report.setPestName(pestName);
+                report.setConfidencePercent(confidence);
+                report.setTreatmentRecommendation(treatment);
+                report.setState(user.getState());
+                report.setDistrict(user.getDistrict());
 
-        PestReport saved = pestReportRepository.save(report);
+                PestReport saved = pestReportRepository.save(report);
 
+                // 🔔 Send SMS alert to farmer
+                try {
+                        smsService.sendSms(
+                                        user.getPhone(),
+                                        "⚠ krishidrishti Alert\n" +
+                                                        "Pest detected: " + pestName +
+                                                        "\nCrop: " + cropType +
+                                                        "\nTreatment: " + treatment);
+                } catch (Exception e) {
+                        System.out.println("SMS sending failed: " + e.getMessage());
+                }
+                // Check district alert
+                String alert = checkDistrictAlert(user.getDistrict(), pestName);
 
-// 🔔 Send SMS alert to farmer
-        try {
-            smsService.sendSms(
-                    user.getPhone(),
-                    "⚠ krishidrishti Alert\n" +
-                            "Pest detected: " + pestName +
-                            "\nCrop: " + cropType +
-                            "\nTreatment: " + treatment
-            );
-        } catch (Exception e) {
-            System.out.println("SMS sending failed: " + e.getMessage());
+                return PestDetectionResponse.builder()
+                                .reportId(saved.getId())
+                                .pestName(pestName)
+                                .confidencePercent(confidence)
+                                .treatmentRecommendation(treatment)
+                                .districtAlert(alert)
+                                .build();
         }
-        // Check district alert
-        String alert = checkDistrictAlert(user.getDistrict(), pestName);
 
-        return PestDetectionResponse.builder()
-                .reportId(saved.getId())
-                .pestName(pestName)
-                .confidencePercent(confidence)
-                .treatmentRecommendation(treatment)
-                .districtAlert(alert)
-                .build();
-    }
+        private String buildPestPrompt(String cropType, String lang) {
+                String langNote = "mr".equals(lang)
+                                ? "Respond in Marathi language."
+                                : "Respond in English.";
+                return """
+                                You are an agricultural expert AI.
+                                Analyze this crop image and identify any pest or disease.
+                                Crop type: %s
+                                %s
 
-    private String buildPestPrompt(String cropType, String lang) {
-        String langNote = "mr".equals(lang)
-                ? "Respond in Marathi language."
-                : "Respond in English.";
-        return """
-            You are an agricultural expert AI.
-            Analyze this crop image and identify any pest or disease.
-            Crop type: %s
-            %s
-
-            Reply ONLY in this exact format, nothing else:
-            PEST_NAME: <name of pest/disease or Healthy>
-            CONFIDENCE: <number between 0-100>%%
-            TREATMENT: <2-3 sentence treatment recommendation>
-            """.formatted(cropType, langNote);
-    }
-
-    private String extractField(String text, String field) {
-        if (text == null) return "Unknown";
-        for (String line : text.split("\n")) {
-            line = line.trim();
-            if (line.startsWith(field + ":")) {
-                return line.substring(field.length() + 1).trim();
-            }
+                                Reply ONLY in this exact format, nothing else:
+                                PEST_NAME: <name of pest/disease or Healthy>
+                                CONFIDENCE: <number between 0-100>%%
+                                TREATMENT: <2-3 sentence treatment recommendation>
+                                """.formatted(cropType, langNote);
         }
-        return "Unknown";
-    }
 
-    private String checkDistrictAlert(String district, String pestName) {
-        List<Object[]> top = pestReportRepository.findTopPestsByDistrict(district);
-        for (Object[] row : top) {
-            if (row[0].equals(pestName) && ((Long) row[1]) >= 3) {
-                return "⚠️ Alert: Multiple cases of " + pestName
-                        + " reported in " + district + " district.";
-            }
+        private String extractField(String text, String field) {
+                if (text == null)
+                        return "Unknown";
+                for (String line : text.split("\n")) {
+                        line = line.trim();
+                        if (line.startsWith(field + ":")) {
+                                return line.substring(field.length() + 1).trim();
+                        }
+                }
+                return "Unknown";
         }
-        return null;
-    }
 
-    public List<PestReport> getUserHistory(Long userId) {
-        return pestReportRepository.findByUserIdOrderByReportedAtDesc(userId);
-    }
+        private String checkDistrictAlert(String district, String pestName) {
+                List<Object[]> top = pestReportRepository.findTopPestsByDistrict(district);
+                for (Object[] row : top) {
+                        if (row[0].equals(pestName) && ((Long) row[1]) >= 3) {
+                                return "⚠️ Alert: Multiple cases of " + pestName
+                                                + " reported in " + district + " district.";
+                        }
+                }
+                return null;
+        }
+
+        public List<PestReport> getUserHistory(Long userId) {
+                return pestReportRepository.findByUserIdOrderByReportedAtDesc(userId);
+        }
 }

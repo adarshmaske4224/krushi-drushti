@@ -17,8 +17,8 @@ public class SchemeController {
     private final SchemeService schemeService;
 
     @GetMapping("/recommendations")
-    public ResponseEntity<SchemeRecommendationResponse.ListResponse> getRecommendations() throws Exception {
-        return ResponseEntity.ok(schemeService.getRecommendations());
+    public ResponseEntity<List<SchemeRecommendationResponse>> getRecommendations() throws Exception {
+        return ResponseEntity.ok(schemeService.getRecommendations().getRecommendations());
     }
 
     @GetMapping("/all")

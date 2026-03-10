@@ -55,15 +55,33 @@ const Dashboard = () => {
         <p className="marathi" style={{ opacity: 0.8, marginBottom: '1.25rem', fontSize: '0.95rem' }}>
           आपल्या शेतासाठी आजचे अपडेट्स पहा
         </p>
-        <div className="d-flex gap-3 flex-wrap">
-          <span style={{ background: 'rgba(255,255,255,0.15)', padding: '6px 14px', borderRadius: '20px', fontSize: '0.82rem' }}>
-            <i className="fas fa-map-marker-alt me-1"></i>{user?.district}, {user?.state}
+        <div className="d-flex gap-2 flex-wrap mt-3">
+          <span style={{
+            background: 'rgba(255,255,255,0.15)',
+            padding: '8px 16px',
+            borderRadius: '20px',
+            fontSize: '0.85rem',
+            lineHeight: '1.2'
+          }}>
+            <i className="fas fa-map-marker-alt me-2"></i>{user?.district}, {user?.state}
           </span>
-          <span style={{ background: 'rgba(255,255,255,0.15)', padding: '6px 14px', borderRadius: '20px', fontSize: '0.82rem' }}>
-            <i className="fas fa-seedling me-1"></i>{user?.primaryCrop}
+          <span style={{
+            background: 'rgba(255,255,255,0.15)',
+            padding: '8px 16px',
+            borderRadius: '20px',
+            fontSize: '0.85rem',
+            lineHeight: '1.2'
+          }}>
+            <i className="fas fa-seedling me-2"></i>{user?.primaryCrop}
           </span>
-          <span style={{ background: 'rgba(255,255,255,0.15)', padding: '6px 14px', borderRadius: '20px', fontSize: '0.82rem' }}>
-            <i className="fas fa-ruler-combined me-1"></i>{user?.landSizeAcres} Acres
+          <span style={{
+            background: 'rgba(255,255,255,0.15)',
+            padding: '8px 16px',
+            borderRadius: '20px',
+            fontSize: '0.85rem',
+            lineHeight: '1.2'
+          }}>
+            <i className="fas fa-ruler-combined me-2"></i>{user?.landSizeAcres} Acres
           </span>
         </div>
       </div>
