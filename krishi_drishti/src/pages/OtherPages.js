@@ -155,7 +155,7 @@ export const PestDetection = () => {
                     <td style={{ fontWeight: 600, color: 'var(--red-alert)' }}>{h.pestName}</td>
                     <td style={{ color: 'var(--green-primary)', fontWeight: 700 }}>{h.confidencePercent?.toFixed(1)}%</td>
                     <td style={{ color: 'var(--text-light)' }}>{h.district}, {h.state}</td>
-                    <td style={{ color: 'var(--text-light)', fontSize: '0.82rem' }}>{new Date(h.detectedAt).toLocaleDateString('en-IN')}</td>
+                    <td style={{ color: 'var(--text-light)', fontSize: '0.82rem' }}>{new Date(h.reportedAt).toLocaleDateString('en-IN')}</td>
                   </tr>
                 ))}
               </tbody>

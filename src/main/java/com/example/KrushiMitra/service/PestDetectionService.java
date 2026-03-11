@@ -106,11 +106,12 @@ public class PestDetectionService {
                 // 🔔 Send SMS alert to farmer
                 try {
                         smsService.sendSms(
-                                        user.getPhone(),
+                                        user,
                                         "⚠ krishidrishti Alert\n" +
                                                         "Pest detected: " + pestName +
                                                         "\nCrop: " + cropType +
-                                                        "\nTreatment: " + treatment);
+                                                        "\nTreatment: " + treatment,
+                                        "PEST_OUTBREAK");
                 } catch (Exception e) {
                         System.out.println("SMS sending failed: " + e.getMessage());
                 }

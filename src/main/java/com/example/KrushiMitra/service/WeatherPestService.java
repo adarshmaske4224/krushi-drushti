@@ -13,6 +13,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.example.KrushiMitra.repository.UserRepository;
+import com.example.KrushiMitra.entity.User;
+import com.example.KrushiMitra.service.SmsService;
+
 @Service
 @RequiredArgsConstructor
 public class WeatherPestService {
@@ -20,6 +24,7 @@ public class WeatherPestService {
         private final WebClient webClient;
         private final ObjectMapper objectMapper;
         private final SmsService smsService;
+        private final UserRepository userRepository;
 
         @Value("${weather.api.url}")
         private String weatherApiUrl;
@@ -139,11 +144,14 @@ public class WeatherPestService {
 
                         if ("HIGH".equalsIgnoreCase(response.getOverallRiskLevel())) {
 
-                                smsService.sendSms(
-                                                "+91XXXXXXXXXX",
-                                                "⚠ krishidrishti Weather Alert\n" +
-                                                                "High pest risk detected for crop: " + cropType +
-                                                                "\nInspect your crops immediately.");
+                                User user = userRepository.findByDistrict(district).stream().findFirst().orElse(null);
+                                if (user != null) {
+                                        smsService.sendSms(
+                                                        user,
+                                                        "⚠ krishidrishti Weather Alert\n" +
+                                                                        "High pest risk detected for crop: " + cropType +
+                                                                        "\nInspect your crops immediately.", "WEATHER_ALERT");
+                                }
                         }
 
                         return response;
@@ -175,29 +183,60 @@ public class WeatherPestService {
                 WeatherPestPredictionResponse response = new WeatherPestPredictionResponse();
 
                 String risk = "LOW";
-                String pest = "None";
-                String reason = "Weather conditions are not favorable for major pests.";
-                String prevention = "Monitor crop regularly.";
+                String pest = "कोणतीही कीड नाही (None)";
+                String reason = "सध्याचे हवामान प्रमुख किडींसाठी अनुकूल नाही.";
+                String prevention = "पिकाची नियमित तपासणी करा.";
 
-                if (humidity > 80 && temperature >= 20 && temperature <= 30) {
+                // Random element to add variety
+                int randomFactor = (int) (Math.random() * 3);
+
+                if (humidity > 70 && temperature >= 20 && temperature <= 32) {
                         risk = "HIGH";
-                        pest = "Aphids / Fungal Diseases";
-                        reason = "High humidity and moderate temperature favor aphids and fungal growth.";
-                        prevention = "Use neem oil spray or fungicide.";
+                        if (randomFactor == 0) {
+                                pest = "मावा / करपा (Aphids / Fungal)";
+                                reason = "जास्त आर्द्रता आणि मध्यम तापमान मावा आणि बुरशीच्या वाढीस अनुकूल आहे.";
+                                prevention = "निम अर्क किंवा योग्य बुरशीनाशकाची फवारणी करा.";
+                        } else if (randomFactor == 1) {
+                                pest = "पांढरी माशी (Whitefly)";
+                                reason = "दमट हवामानामुळे पांढऱ्या माशीचा प्रादुर्भाव वाढू शकतो.";
+                                prevention = "पिवळे चिकट सापळे लावा आणि योग्य कीटकनाशक वापरा.";
+                        } else {
+                                pest = "अळी (Caterpillar / Armyworm)";
+                                reason = "सध्याचे हवामान अळीच्या प्रजननास अनुकूल आहे.";
+                                prevention = "जैविक कीटकनाशकांची फवारणी करा.";
+                        }
                 }
 
-                else if (rainfall > 10) {
+                else if (rainfall > 5) {
                         risk = "MEDIUM";
-                        pest = "Root Rot / Bacterial Blight";
-                        reason = "Excess rainfall can cause root diseases.";
-                        prevention = "Improve soil drainage.";
+                        if (randomFactor == 0) {
+                                pest = "मूळकूज / जिवाणू करपा (Root Rot / Bacterial Blight)";
+                                reason = "जास्त पावसामुळे आणि पाणी साचल्यामुळे मुळांचे आजार होऊ शकतात.";
+                                prevention = "शेतातील पाण्याचा निचरा सुधारा आणि कॉपर आधारित औषधे वापरा.";
+                        } else {
+                                pest = "खोडकिडा (Stem Borer)";
+                                reason = "पावसाळी वातावरणात खोडकिड्याचा प्रादुर्भाव दिसू शकतो.";
+                                prevention = "प्रादुर्भावग्रस्त झाडे नष्ट करा.";
+                        }
                 }
 
-                else if (temperature > 35 && humidity < 40) {
+                else if (temperature > 32 && humidity < 50) {
                         risk = "MEDIUM";
-                        pest = "Spider Mites / Thrips";
-                        reason = "Hot and dry weather encourages mites and thrips.";
-                        prevention = "Spray water on leaves.";
+                        if (randomFactor == 0) {
+                                pest = "लाल कोळी / फुलकिडे (Spider Mites / Thrips)";
+                                reason = "उष्ण आणि कोरड्या हवामानामुळे कोळी आणि फुलकिड्यांचा प्रादुर्भाव वाढतो.";
+                                prevention = "पानांवर पाण्याचा फवारा मारा किंवा योग्य औषध वापरा.";
+                        } else {
+                                pest = "पिठ्या ढेकूण (Mealybug)";
+                                reason = "कोरड्या हवामानात पिठ्या ढेकूण वेगाने पसरतो.";
+                                prevention = "साबणाचे पाणी किंवा निम अर्काची फवारणी करा.";
+                        }
+                } else {
+                        // Default general risk if nothing else matches strongly
+                        risk = "LOW";
+                        pest = "किरकोळ कीड (Minor Pests)";
+                        reason = "हवामान सामान्य आहे, मोठा धोका नाही.";
+                        prevention = "प्रतिबंधात्मक उपाय म्हणून निम अर्काची फवारणी करू शकता.";
                 }
 
                 WeatherPestPredictionResponse.PestPrediction prediction = WeatherPestPredictionResponse.PestPrediction
@@ -209,7 +248,7 @@ public class WeatherPestService {
                                 .build();
 
                 response.setOverallRiskLevel(risk);
-                response.setGeneralAdvice("Monitor crop health regularly.");
+                response.setGeneralAdvice("पिकाच्या आरोग्यावर नियमित लक्ष ठेवा. (Monitor crop health regularly)");
                 response.setPredictions(List.of(prediction));
                 response.setTemperature(temperature);
                 response.setHumidity(humidity);

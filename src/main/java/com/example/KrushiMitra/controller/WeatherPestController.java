@@ -14,9 +14,9 @@ public class WeatherPestController {
 
     @GetMapping("/pest-prediction")
     public WeatherPestPredictionResponse predictPests(
-            @RequestParam(required = false) String district,
-            @RequestParam(required = false) String state,
-            @RequestParam(required = false) String cropType
+            @RequestParam(name = "district", required = false) String district,
+            @RequestParam(name = "state", required = false) String state,
+            @RequestParam(name = "cropType", required = false) String cropType
     ) throws Exception {
 
         return weatherPestService.predictPests(district, state, cropType);
