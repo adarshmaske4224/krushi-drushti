@@ -1,6 +1,7 @@
 package com.example.KrushiMitra.service;
 
 import com.example.KrushiMitra.dto.CropRecommendationDTO;
+import com.example.KrushiMitra.dto.CropRecommendationRequest;
 import com.example.KrushiMitra.dto.CropRecommendationResponse;
 import com.example.KrushiMitra.dto.ScoreBreakdownDTO;
 import com.example.KrushiMitra.entity.CropInformation;
@@ -26,44 +27,35 @@ public class CropRecommendationService {
     private final CropScoringService cropScoringService;
 
     /**
-     * Returns the top 5 recommended crops for the given district,
-     * sorted by suitability score (descending), with detailed reasons.
+     * Returns the top 5 recommended crops based on district, month, irrigation and soil type.
      */
-    public CropRecommendationResponse getRecommendations(String districtName) {
+    public CropRecommendationResponse getRecommendations(CropRecommendationRequest request) {
 
-        log.info("Getting crop recommendations for district: {}", districtName);
+        log.info("Processing crop recommendations for district: {}, month: {}, irrigation: {}, soil: {}", 
+                request.getDistrict(), request.getMonth(), request.getIrrigation(), request.getSoilType());
 
         // 1. Fetch district climate data
         DistrictClimate district = districtClimateRepository
-                .findByDistrictNameIgnoreCase(districtName)
+                .findByDistrictNameIgnoreCase(request.getDistrict())
                 .orElseThrow(() -> {
-                    log.error("District not found in climate database: {}", districtName);
-                    return new ResourceNotFoundException(
-                            "District not found: " + districtName);
+                    log.error("District not found in climate database: {}", request.getDistrict());
+                    return new ResourceNotFoundException("District not found: " + request.getDistrict());
                 });
-        log.debug("District climate data loaded — temp: {}-{}°C, rainfall: {}-{}mm, soil: {}",
-                district.getTempMin(), district.getTempMax(),
-                district.getRainfallMin(), district.getRainfallMax(),
-                district.getSoilType());
 
-        // 2. Fetch all crops
+        // 2. Determine season from month
+        String season = determineSeason(request.getMonth());
+        log.info("Determined season: {} for month: {}", season, request.getMonth());
+
+        // 3. Fetch all crops
         List<CropInformation> allCrops = cropRepository.findAll();
-        log.info("Total crops in database: {}", allCrops.size());
-
-        if (allCrops.isEmpty()) {
-            log.error("No crops found in the database");
-            throw new ResourceNotFoundException("No crops found in the database");
-        }
-
-        // 3. Score each crop, build detailed DTOs
+        
+        // 4. Score all crops (No strict filtering, but pass season to scoring service)
         List<CropRecommendationDTO> recommendations = allCrops.stream()
                 .map(crop -> {
-                    int score = cropScoringService.calculateTotalScore(crop, district);
+                    int score = cropScoringService.calculateTotalScore(crop, district, request.getSoilType(), request.getIrrigation(), season);
                     double profit = cropScoringService.calculateProfit(crop);
                     List<ScoreBreakdownDTO> breakdown =
-                            cropScoringService.getDetailedBreakdown(crop, district);
-
-                    log.debug("Scored crop: {} — score: {}, profit: ₹{}", crop.getCropName(), score, profit);
+                            cropScoringService.getDetailedBreakdown(crop, district, request.getSoilType(), request.getIrrigation(), season);
 
                     return CropRecommendationDTO.builder()
                             .crop(crop.getCropName())
@@ -77,18 +69,29 @@ public class CropRecommendationService {
                             .scoreBreakdown(breakdown)
                             .build();
                 })
-                // 4. Sort by score descending
                 .sorted(Comparator.comparingInt(CropRecommendationDTO::getScore).reversed())
-                // 5. Take the top 5
                 .limit(5)
                 .collect(Collectors.toList());
 
-        log.info("Top 5 crop recommendations for {} — {}", districtName,
-                recommendations.stream().map(r -> r.getCrop() + "(" + r.getScore() + ")").collect(Collectors.joining(", ")));
-
         return CropRecommendationResponse.builder()
                 .district(district.getDistrictName())
+                .season(season)
                 .recommendations(recommendations)
                 .build();
+    }
+
+    private String determineSeason(String month) {
+        if (month == null) return "KHARIF";
+        String m = month.toLowerCase();
+        if (m.contains("june") || m.contains("july") || m.contains("august") || m.contains("september") || m.contains("october")) {
+            return "KHARIF";
+        }
+        if (m.contains("november") || m.contains("december") || m.contains("january") || m.contains("february") || m.contains("march")) {
+            return "RABI";
+        }
+        if (m.contains("april") || m.contains("may")) {
+            return "ZAID";
+        }
+        return "KHARIF";
     }
 }

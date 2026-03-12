@@ -6,28 +6,37 @@ import com.example.KrushiMitra.entity.DistrictClimate;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.time.Month;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Calculates a suitability score (0–100) for a crop given a district's climate data.
- *
- * Scoring breakdown:
- *   Climate Suitability  → 25 pts
- *   Soil Compatibility   → 20 pts
- *   Season Match         → 15 pts
- *   Water Availability   → 10 pts
- *   Profit Potential     → 15 pts
- *   Growth Duration      →  5 pts
- *   Market Demand        → 10 pts
- */
-@Slf4j
-@Service
-public class CropScoringService {
+    /**
+     * Calculates a suitability score (0–100) for a crop given a district's climate data.
+     *
+     * Scoring breakdown:
+     *   Climate Suitability    → 25 pts
+     *   Soil Compatibility     → 20 pts
+     *   Irrigation Compatibility → 15 pts
+     *   Profit Potential       → 25 pts
+     *   Growth Duration        → 10 pts
+     *   Market Demand          →  5 pts
+     */
+    @Slf4j
+    @Service
+    public class CropScoringService {
 
-    // ── 1. Climate Suitability (25 pts) ──────────────────────────────────
+    // ── 0. Season Match (15 pts) ─────────────────────────────────────────
+    public double calculateSeasonMatch(CropInformation crop, String detectedSeason) {
+        if (crop.getSeason() == null || detectedSeason == null) return 7.5;
+        String s = crop.getSeason().toUpperCase();
+        String d = detectedSeason.toUpperCase();
+        
+        if (s.contains(d) || s.contains("WHOLE YEAR") || s.contains("ALL")) {
+            return 15;
+        }
+        return 0; // Mismatch
+    }
+
+    // ── 1. Climate Suitability (20 pts) ──────────────────────────────────
     public double calculateClimateSuitability(CropInformation crop, DistrictClimate district) {
         double tempScore = calculateRangeOverlap(
                 crop.getTempMin(), crop.getTempMax(),
@@ -37,131 +46,107 @@ public class CropScoringService {
                 crop.getRainfallMin(), crop.getRainfallMax(),
                 district.getRainfallMin(), district.getRainfallMax());
 
-        // Temperature gets 60 % weight, rainfall 40 %
-        return (tempScore * 0.6 + rainScore * 0.4) * 25;
+        return (tempScore * 0.6 + rainScore * 0.4) * 20;
     }
 
-    // ── 2. Soil Compatibility (20 pts) ───────────────────────────────────
-    public double calculateSoilCompatibility(CropInformation crop, DistrictClimate district) {
-        if (crop.getSoilType() == null || district.getSoilType() == null) {
-            return 10; // partial score when data is missing
+    // ── 2. Soil Compatibility (15 pts) ───────────────────────────────────
+    public double calculateSoilCompatibility(CropInformation crop, String inputSoilType) {
+        if (crop.getSoilType() == null || inputSoilType == null) {
+            return 7.5;
         }
 
         String cropSoil = crop.getSoilType().toLowerCase().trim();
-        String districtSoil = district.getSoilType().toLowerCase().trim();
+        String userSoil = inputSoilType.toLowerCase().trim();
 
-        if (districtSoil.contains(cropSoil) || cropSoil.contains(districtSoil)) {
-            return 20; // exact match
-        }
-
-        // partial match – check for overlapping soil keywords
-        String[] cropSoils = cropSoil.split("[,/\\s]+");
-        String[] districtSoils = districtSoil.split("[,/\\s]+");
-        for (String cs : cropSoils) {
-            for (String ds : districtSoils) {
-                if (cs.equals(ds)) return 15;
-            }
-        }
-        return 5; // no match at all
-    }
-
-    // ── 3. Season Match (15 pts) ─────────────────────────────────────────
-    public double calculateSeasonMatch(CropInformation crop) {
-        if (crop.getSeason() == null) return 7;
-
-        String season = crop.getSeason().toLowerCase().trim();
-        String currentSeason = getCurrentSeason();
-
-        if (season.contains(currentSeason) || season.equalsIgnoreCase("whole year")
-                || season.equalsIgnoreCase("all")) {
+        if (userSoil.contains(cropSoil) || cropSoil.contains(userSoil)) {
             return 15;
         }
 
-        // Adjacent-season partial credit
-        String nextSeason = getNextSeason(currentSeason);
-        if (season.contains(nextSeason)) {
-            return 10;
+        String[] cropSoils = cropSoil.split("[,/\\s]+");
+        String[] userSoils = userSoil.split("[,/\\s]+");
+        for (String cs : cropSoils) {
+            for (String us : userSoils) {
+                if (cs.equals(us)) return 10;
+            }
         }
-
-        return 3;
+        return 0; // Mismatch
     }
 
-    // ── 4. Water Availability (10 pts) ───────────────────────────────────
-    public double calculateWaterAvailability(CropInformation crop, DistrictClimate district) {
-        if (crop.getWaterRequirement() == null) return 5;
+    // ── 3. Irrigation Compatibility (15 pts) ──────────────────────────────
+    public double calculateIrrigationCompatibility(CropInformation crop, String irrigationType) {
+        if (crop.getWaterRequirement() == null || irrigationType == null) return 7.5;
 
-        String requirement = crop.getWaterRequirement().toLowerCase().trim();
-        boolean hasIrrigation = district.getWaterSource() != null
-                && (district.getWaterSource().toLowerCase().contains("canal")
-                    || district.getWaterSource().toLowerCase().contains("river")
-                    || district.getWaterSource().toLowerCase().contains("well")
-                    || district.getWaterSource().toLowerCase().contains("irrigation"));
+        String req = crop.getWaterRequirement().toLowerCase();
+        String irr = irrigationType.toLowerCase();
 
-        if (requirement.contains("low")) {
-            return 10; // low-water crops always score well
-        } else if (requirement.contains("medium")) {
-            return hasIrrigation ? 8 : 5;
-        } else if (requirement.contains("high")) {
-            return hasIrrigation ? 7 : 3;
+        if (req.contains("high")) {
+            if (irr.contains("river") || irr.contains("canal") || irr.contains("drip")) return 15;
+            if (irr.contains("well") || irr.contains("borewell")) return 10;
+            return 0; 
         }
-
-        return 5;
+        if (req.contains("medium")) {
+            if (irr.contains("rainfed")) return 5;
+            return 15;
+        }
+        if (req.contains("low")) {
+            return 15;
+        }
+        return 7.5;
     }
 
-    // ── 5. Profit Potential (15 pts) ─────────────────────────────────────
+    // ── 4. Profit Potential (25 pts) ─────────────────────────────────────
     public double calculateProfitPotential(CropInformation crop) {
         double profit = calculateProfit(crop);
 
-        if (profit >= 50000) return 15;
-        if (profit >= 30000) return 12;
-        if (profit >= 15000) return 9;
-        if (profit >= 5000)  return 6;
-        return 3;
+        if (profit >= 50000) return 25;
+        if (profit >= 40000) return 20;
+        if (profit >= 30000) return 15;
+        if (profit >= 20000) return 10;
+        return 5;
     }
 
-    // ── 6. Growth Duration (5 pts) ───────────────────────────────────────
+    // ── 5. Growth Duration (5 pts) ───────────────────────────────────────
     public double calculateGrowthDuration(CropInformation crop) {
         if (crop.getGrowthDays() == null) return 2.5;
 
         int days = crop.getGrowthDays();
-        if (days <= 90)  return 5;   // short cycle – quick returns
-        if (days <= 150) return 3.5;
+        if (days <= 90)  return 5;
+        if (days <= 120) return 4;
+        if (days <= 150) return 3;
         return 2;
     }
 
-    // ── 7. Market Demand (10 pts) ────────────────────────────────────────
+    // ── 6. Market Demand (5 pts) ─────────────────────────────────────────
     public double calculateMarketDemand(CropInformation crop) {
-        if (crop.getCategory() == null) return 5;
+        if (crop.getCategory() == null) return 2.5;
 
         String category = crop.getCategory().toLowerCase().trim();
 
-        // High-demand categories
         if (category.contains("cereal") || category.contains("pulse")
                 || category.contains("oilseed") || category.contains("vegetable")) {
-            return 10;
+            return 5;
         }
 
-        // Medium-demand
         if (category.contains("fruit") || category.contains("spice")
                 || category.contains("cash crop") || category.contains("commercial")) {
-            return 7;
+            return 3.5;
         }
 
-        return 5;
+        return 2.5;
     }
 
     // ═══════════════════════════════════════════════════════════════════
     //  Aggregate score
     // ═══════════════════════════════════════════════════════════════════
-    public int calculateTotalScore(CropInformation crop, DistrictClimate district) {
+    public int calculateTotalScore(CropInformation crop, DistrictClimate district, String soilType, String irrigation, String season) {
         double total = 0;
-        total += calculateClimateSuitability(crop, district);   // 25
-        total += calculateSoilCompatibility(crop, district);    // 20
-        total += calculateSeasonMatch(crop);                    // 15
-        total += calculateWaterAvailability(crop, district);    // 10
-        total += calculateProfitPotential(crop);                // 15
+        total += calculateSeasonMatch(crop, season);            // 15
+        total += calculateClimateSuitability(crop, district);   // 20
+        total += calculateSoilCompatibility(crop, soilType);    // 15
+        total += calculateIrrigationCompatibility(crop, irrigation); // 15
+        total += calculateProfitPotential(crop);                // 25
         total += calculateGrowthDuration(crop);                 //  5
-        total += calculateMarketDemand(crop);                   // 10
+        total += calculateMarketDemand(crop);                   //  5
 
         return (int) Math.round(Math.min(total, 100));
     }
@@ -169,149 +154,186 @@ public class CropScoringService {
     // ═══════════════════════════════════════════════════════════════════
     //  Detailed breakdown with reasons
     // ═══════════════════════════════════════════════════════════════════
-    public List<ScoreBreakdownDTO> getDetailedBreakdown(CropInformation crop, DistrictClimate district) {
+    public List<ScoreBreakdownDTO> getDetailedBreakdown(CropInformation crop, DistrictClimate district, String soilType, String irrigation, String season) {
         List<ScoreBreakdownDTO> breakdown = new ArrayList<>();
+
+        // 0. Season Match
+        double seasonScore = calculateSeasonMatch(crop, season);
+        String seasonReason;
+        if (seasonScore >= 15) {
+            seasonReason = String.format("हंगाम अचूक आहे. हे पीक %s हंगामात घेता येते.", translateSeason(crop.getSeason()));
+        } else {
+            seasonReason = String.format("हंगाम जुळत नाही. तुम्ही %s निवडला आहे, पण हे पीक %s हंगामातील आहे.", 
+                translateSeason(season), translateSeason(crop.getSeason()));
+        }
+        breakdown.add(ScoreBreakdownDTO.builder()
+                .factor("हंगाम सुसंगतता (Season)").maxPoints(15)
+                .scored((int) Math.round(seasonScore)).reason(seasonReason).build());
 
         // 1. Climate Suitability
         double climateScore = calculateClimateSuitability(crop, district);
         String climateReason;
-        if (climateScore >= 20) {
+        if (climateScore >= 16) {
             climateReason = String.format(
-                "Excellent climate match. Crop needs %s–%s°C temp and %s–%s mm rainfall. "
-                + "District provides %s–%s°C and %s–%s mm — very well suited.",
+                "हवामान उत्कृष्ट आहे. या पिकासाठी %s–%s°C तापमान आणि %s–%s मिमी पाऊस आवश्यक आहे. "
+                + "तुमच्या जिल्हयात %s–%s°C तापमान आणि %s–%s मिमी पाऊस उपलब्ध आहे.",
                 fmt(crop.getTempMin()), fmt(crop.getTempMax()),
                 fmt(crop.getRainfallMin()), fmt(crop.getRainfallMax()),
                 fmt(district.getTempMin()), fmt(district.getTempMax()),
                 fmt(district.getRainfallMin()), fmt(district.getRainfallMax()));
-        } else if (climateScore >= 12) {
+        } else if (climateScore >= 8) {
             climateReason = String.format(
-                "Moderate climate match. Crop range: %s–%s°C / %s–%s mm. "
-                + "District: %s–%s°C / %s–%s mm — partial overlap.",
+                "हवामान मध्यम स्वरूपाचे आहे. पिकाची गरज: %s–%s°C / %s–%s मिमी. "
+                + "जिल्ह्यातील स्थिती: %s–%s°C / %s–%s मिमी.",
                 fmt(crop.getTempMin()), fmt(crop.getTempMax()),
                 fmt(crop.getRainfallMin()), fmt(crop.getRainfallMax()),
                 fmt(district.getTempMin()), fmt(district.getTempMax()),
                 fmt(district.getRainfallMin()), fmt(district.getRainfallMax()));
         } else {
             climateReason = String.format(
-                "Poor climate match. Crop needs %s–%s°C / %s–%s mm but district has %s–%s°C / %s–%s mm.",
+                "हवामान सुसंगत नाही. पिकासाठी %s–%s°C / %s–%s मिमी आवश्यक आहे, तर जिल्ह्यात %s–%s°C / %s–%s मिमी आहे.",
                 fmt(crop.getTempMin()), fmt(crop.getTempMax()),
                 fmt(crop.getRainfallMin()), fmt(crop.getRainfallMax()),
                 fmt(district.getTempMin()), fmt(district.getTempMax()),
                 fmt(district.getRainfallMin()), fmt(district.getRainfallMax()));
         }
         breakdown.add(ScoreBreakdownDTO.builder()
-                .factor("Climate Suitability").maxPoints(25)
+                .factor("हवामान अनुकूलता (Climate)").maxPoints(20)
                 .scored((int) Math.round(climateScore)).reason(climateReason).build());
 
         // 2. Soil Compatibility
-        double soilScore = calculateSoilCompatibility(crop, district);
+        double soilScore = calculateSoilCompatibility(crop, soilType);
         String soilReason;
-        if (soilScore >= 18) {
-            soilReason = String.format("Perfect soil match. Crop grows best in '%s' soil and district has '%s' soil.",
-                    safe(crop.getSoilType()), safe(district.getSoilType()));
-        } else if (soilScore >= 12) {
-            soilReason = String.format("Partial soil match. Crop prefers '%s' but district has '%s' — some compatibility.",
-                    safe(crop.getSoilType()), safe(district.getSoilType()));
+        if (soilScore >= 14) {
+            soilReason = String.format("माती या पिकासाठी अत्यंत योग्य आहे. हे पीक '%s' मातीत चांगले येते आणि तुम्ही '%s' निवडली आहे.",
+                    translateSoil(crop.getSoilType()), translateSoil(soilType));
+        } else if (soilScore >= 8) {
+            soilReason = String.format("माती मध्यम स्वरूपाची आहे. निवडलेली माती '%s' ही '%s' पिकासाठी साधारण अनुकूल आहे.",
+                    translateSoil(soilType), translateSoil(crop.getSoilType()));
         } else {
-            soilReason = String.format("Low soil compatibility. Crop needs '%s' soil, district has '%s'.",
-                    safe(crop.getSoilType()), safe(district.getSoilType()));
+            soilReason = String.format("माती जुळत नाही. पिकासाठी '%s' माती हवी, पण तुम्ही '%s' निवडली आहे.",
+                    translateSoil(crop.getSoilType()), translateSoil(soilType));
         }
         breakdown.add(ScoreBreakdownDTO.builder()
-                .factor("Soil Compatibility").maxPoints(20)
+                .factor("मातीची सुसंगतता (Soil)").maxPoints(15)
                 .scored((int) Math.round(soilScore)).reason(soilReason).build());
 
-        // 3. Season Match
-        double seasonScore = calculateSeasonMatch(crop);
-        String currentSeason = getCurrentSeason();
-        String seasonReason;
-        if (seasonScore >= 14) {
-            seasonReason = String.format("Great timing! This is a '%s' crop and current season is '%s' — ideal for sowing now.",
-                    safe(crop.getSeason()), currentSeason);
-        } else if (seasonScore >= 8) {
-            seasonReason = String.format("Crop season is '%s', current season is '%s' — you can start preparing for the next season.",
-                    safe(crop.getSeason()), currentSeason);
+        // 3. Irrigation Compatibility
+        double irrigationScore = calculateIrrigationCompatibility(crop, irrigation);
+        String irrigationReason;
+        if (irrigationScore >= 14) {
+            irrigationReason = String.format("पाण्याची उपलब्धता उत्तम आहे. '%s' द्वारे मिळणारे पाणी पिकाच्या '%s' गरजेसाठी पुरेसे आहे.",
+                    translateIrrigation(irrigation), translateWaterReq(crop.getWaterRequirement()));
+        } else if (irrigationScore >= 8) {
+            irrigationReason = String.format("पाणी पुरेसे आहे. पिकाची गरज '%s' असून '%s' ही मध्यम सोय आहे.",
+                    translateWaterReq(crop.getWaterRequirement()), translateIrrigation(irrigation));
         } else {
-            seasonReason = String.format("Off-season crop. '%s' crop is not suited for the current '%s' season.",
-                    safe(crop.getSeason()), currentSeason);
+            irrigationReason = String.format("पाण्याची कमतरता! '%s' पिकाची गरज जास्त असून '%s' ही सोय अपुरी पडू शकते.",
+                    crop.getCropName(), translateIrrigation(irrigation));
         }
         breakdown.add(ScoreBreakdownDTO.builder()
-                .factor("Season Match").maxPoints(15)
-                .scored((int) Math.round(seasonScore)).reason(seasonReason).build());
+                .factor("पाणी उपलब्धता (Irrigation)").maxPoints(15)
+                .scored((int) Math.round(irrigationScore)).reason(irrigationReason).build());
 
-        // 4. Water Availability
-        double waterScore = calculateWaterAvailability(crop, district);
-        String waterReason;
-        if (waterScore >= 8) {
-            waterReason = String.format("Good water match. Crop needs '%s' water and district has '%s' water source.",
-                    safe(crop.getWaterRequirement()), safe(district.getWaterSource()));
-        } else if (waterScore >= 5) {
-            waterReason = String.format("Moderate water availability. Crop needs '%s' water; district source is '%s' — manageable.",
-                    safe(crop.getWaterRequirement()), safe(district.getWaterSource()));
-        } else {
-            waterReason = String.format("Water concern. Crop requires '%s' water but district has limited source ('%s').",
-                    safe(crop.getWaterRequirement()), safe(district.getWaterSource()));
-        }
-        breakdown.add(ScoreBreakdownDTO.builder()
-                .factor("Water Availability").maxPoints(10)
-                .scored((int) Math.round(waterScore)).reason(waterReason).build());
-
-        // 5. Profit Potential
+        // 4. Profit Potential
         double profitScore = calculateProfitPotential(crop);
         double profit = calculateProfit(crop);
         String profitReason;
-        if (profitScore >= 12) {
-            profitReason = String.format("High profitability! Expected profit ₹%,.0f/acre (yield %.0f × ₹%.0f price − ₹%,.0f cost).",
-                    profit, d(crop.getYieldPerAcre()), d(crop.getAvgPrice()), d(crop.getAvgCost()));
-        } else if (profitScore >= 6) {
-            profitReason = String.format("Moderate profit of ₹%,.0f/acre. Yield: %.0f, price: ₹%.0f, cost: ₹%,.0f.",
-                    profit, d(crop.getYieldPerAcre()), d(crop.getAvgPrice()), d(crop.getAvgCost()));
+        if (profitScore >= 20) {
+            profitReason = String.format("उच्च नफ्याची शक्यता! अंदाजित नफा ₹%,.0f/एकर आहे.", profit);
+        } else if (profitScore >= 10) {
+            profitReason = String.format("मध्यम स्वरूपाचा नफा ₹%,.0f/एकर.", profit);
         } else {
-            profitReason = String.format("Low profitability. Expected profit only ₹%,.0f/acre.",
-                    profit);
+            profitReason = String.format("कमी नफा. अंदाजित नफा फक्त ₹%,.0f/एकर.", profit);
         }
         breakdown.add(ScoreBreakdownDTO.builder()
-                .factor("Profit Potential").maxPoints(15)
+                .factor("नफ्याची क्षमता (Profit)").maxPoints(25)
                 .scored((int) Math.round(profitScore)).reason(profitReason).build());
 
-        // 6. Growth Duration
+        // 5. Growth Duration
         double growthScore = calculateGrowthDuration(crop);
         String growthReason;
         if (crop.getGrowthDays() != null) {
-            if (growthScore >= 4) {
-                growthReason = String.format("Short growth cycle of %d days — quick returns, lets you plan multiple cycles per year.",
-                        crop.getGrowthDays());
-            } else if (growthScore >= 3) {
-                growthReason = String.format("Medium growth period of %d days — standard cycle, reasonable turnaround.",
-                        crop.getGrowthDays());
-            } else {
-                growthReason = String.format("Long growth cycle of %d days — requires patience, ties up land longer.",
-                        crop.getGrowthDays());
-            }
+            growthReason = String.format("%d दिवसांचे पीक चक्र. %s", 
+                crop.getGrowthDays(), 
+                growthScore >= 4 ? "कमी कालावधीत उत्पादन मिळते." : "मध्यम ते जास्त कालावधी.");
         } else {
-            growthReason = "Growth duration data not available.";
+            growthReason = "पीक कालावधीची माहिती उपलब्ध नाही.";
         }
         breakdown.add(ScoreBreakdownDTO.builder()
-                .factor("Growth Duration").maxPoints(5)
+                .factor("पीक कालावधी (Growth)").maxPoints(5)
                 .scored((int) Math.round(growthScore)).reason(growthReason).build());
 
-        // 7. Market Demand
+        // 6. Market Demand
         double marketScore = calculateMarketDemand(crop);
         String marketReason;
-        if (marketScore >= 9) {
-            marketReason = String.format("High market demand! '%s' category crops (like %s) are always in demand and easy to sell.",
-                    safe(crop.getCategory()), crop.getCropName());
-        } else if (marketScore >= 6) {
-            marketReason = String.format("Moderate market demand. '%s' category has steady buyers.",
-                    safe(crop.getCategory()));
+        if (marketScore >= 4.5) {
+            marketReason = String.format("बाजारात या पिकासाठी खूप मागणी आहे (%s श्रेणी).", translateCategory(crop.getCategory()));
         } else {
-            marketReason = String.format("Limited market demand for '%s' category crops. Find buyers before planting.",
-                    safe(crop.getCategory()));
+            marketReason = String.format("बाजारात या पिकासाठी स्थिर मागणी आहे (%s श्रेणी).", translateCategory(crop.getCategory()));
         }
         breakdown.add(ScoreBreakdownDTO.builder()
-                .factor("Market Demand").maxPoints(10)
+                .factor("बाजार मागणी (Market)").maxPoints(5)
                 .scored((int) Math.round(marketScore)).reason(marketReason).build());
 
         return breakdown;
+    }
+
+    private String translateSeason(String season) {
+        if (season == null) return "माहिती नाही";
+        String s = season.toUpperCase();
+        if (s.contains("KHARIF")) return "खरीप";
+        if (s.contains("RABI")) return "रब्बी";
+        if (s.contains("ZAID")) return "उन्हाळी (Zaid)";
+        if (s.contains("WHOLE YEAR") || s.contains("ALL")) return "वर्षभर";
+        return season;
+    }
+
+    private String translateSoil(String soil) {
+        if (soil == null) return "माहिती नाही";
+        String s = soil.toLowerCase();
+        if (s.contains("black cotton")) return "काळी कापसाची माती";
+        if (s.contains("black")) return "काळी माती";
+        if (s.contains("sandy")) return "वाळूमय माती";
+        if (s.contains("loamy")) return "लोमी माती";
+        if (s.contains("red")) return "लाल माती";
+        if (s.contains("clay")) return "चिकन माती";
+        return soil;
+    }
+
+    private String translateIrrigation(String irr) {
+        if (irr == null) return "माहिती नाही";
+        String i = irr.toLowerCase();
+        if (i.contains("rainfed")) return "कोरडवाहू (पाऊस)";
+        if (i.contains("borewell")) return "बोअरवेल";
+        if (i.contains("well")) return "विहीर";
+        if (i.contains("river")) return "नदी";
+        if (i.contains("canal")) return "कालवा";
+        if (i.contains("pond")) return "शेततळे";
+        if (i.contains("drip")) return "ठिबक सिंचन";
+        return irr;
+    }
+
+    private String translateWaterReq(String req) {
+        if (req == null) return "मध्यम";
+        String r = req.toLowerCase();
+        if (r.contains("high")) return "जास्त";
+        if (r.contains("medium")) return "मध्यम";
+        if (r.contains("low")) return "कमी";
+        return req;
+    }
+
+    private String translateCategory(String cat) {
+        if (cat == null) return "इतर";
+        String c = cat.toLowerCase();
+        if (c.contains("cereal")) return "धान्य";
+        if (c.contains("pulse")) return "कडधान्य";
+        if (c.contains("oilseed")) return "तेलबिया";
+        if (c.contains("vegetable")) return "भाजीपाला";
+        if (c.contains("fruit")) return "फळे";
+        if (c.contains("spice")) return "मसाले";
+        if (c.contains("cash")) return "नगदी पीक";
+        return cat;
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -350,25 +372,6 @@ public class CropScoringService {
         return rangeLength > 0 ? overlapLength / rangeLength : 1;
     }
 
-    private String getCurrentSeason() {
-        Month month = LocalDate.now().getMonth();
-        int m = month.getValue();
-
-        if (m >= 6 && m <= 10) return "kharif";
-        if (m >= 11 || m <= 2) return "rabi";
-        return "zaid";
-    }
-
-    private String getNextSeason(String current) {
-        return switch (current) {
-            case "kharif" -> "rabi";
-            case "rabi"   -> "zaid";
-            default       -> "kharif";
-        };
-    }
-
     private String fmt(Double v) { return v != null ? String.format("%.0f", v) : "N/A"; }
-    private String safe(String s) { return s != null && !s.isBlank() ? s : "N/A"; }
-    private double d(Double v) { return v != null ? v : 0; }
 }
 

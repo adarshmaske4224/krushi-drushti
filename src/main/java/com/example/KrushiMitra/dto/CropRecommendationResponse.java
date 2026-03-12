@@ -11,5 +11,6 @@ import java.util.List;
 public class CropRecommendationResponse {
 
     private String district;
+    private String season;
     private List<CropRecommendationDTO> recommendations;
 }

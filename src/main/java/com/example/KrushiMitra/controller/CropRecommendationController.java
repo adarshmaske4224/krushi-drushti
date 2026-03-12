@@ -1,5 +1,6 @@
 package com.example.KrushiMitra.controller;
 
+import com.example.KrushiMitra.dto.CropRecommendationRequest;
 import com.example.KrushiMitra.dto.CropRecommendationResponse;
 import com.example.KrushiMitra.service.CropRecommendationService;
 import lombok.RequiredArgsConstructor;
@@ -17,18 +18,20 @@ public class CropRecommendationController {
     private final CropRecommendationService cropRecommendationService;
 
     /**
-     * GET /api/crops/recommend?district={districtName}
+     * POST /api/crops/recommend
      *
-     * Returns the top 5 recommended crops for the specified district.
+     * Returns the top 5 recommended crops for the specified parameters.
      */
-    @GetMapping("/recommend")
+    @PostMapping("/recommend")
     public ResponseEntity<CropRecommendationResponse> getRecommendations(
-            @RequestParam("district") String districtName) {
+            @RequestBody CropRecommendationRequest request) {
 
-        log.info("GET /api/crops/recommend — district: {}", districtName);
+        log.info("POST /api/crops/recommend — district: {}, month: {}", 
+                request.getDistrict(), request.getMonth());
         CropRecommendationResponse response =
-                cropRecommendationService.getRecommendations(districtName);
-        log.info("Crop recommendations returned — district: {}, count: {}", districtName, response.getRecommendations().size());
+                cropRecommendationService.getRecommendations(request);
+        log.info("Crop recommendations returned — district: {}, count: {}", 
+                request.getDistrict(), response.getRecommendations().size());
 
         return ResponseEntity.ok(response);
     }
