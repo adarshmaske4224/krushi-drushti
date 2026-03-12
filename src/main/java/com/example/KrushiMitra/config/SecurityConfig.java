@@ -43,7 +43,8 @@ public class SecurityConfig {
                                 "/h2-console/**", // ✅ H2 console if using H2
                                 "/api/weather/**",
                                 "/api/pest/**",
-                                "/api/chat/**" // ✅ ai crop doctor
+                                "/api/chat/**", // ✅ ai crop doctor
+                                "/api/crops/**" // ✅ crop recommendation
 
                         ).permitAll()
                         .anyRequest().authenticated() // everything else needs JWT

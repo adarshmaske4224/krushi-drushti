@@ -65,4 +65,9 @@ export const chatAPI = {
   ask: (data) => api.post('/api/chat/ask', data),
 };
 
+export const cropRecommendAPI = {
+  getRecommendations: (district) =>
+    api.get('/api/crops/recommend', { params: { district } }),
+};
+
 export default api;

@@ -1,8 +1,9 @@
 package com.example.KrushiMitra.service;
 
-import com.example.KrushiMitra.entity.User;          // ✅ ADD THIS IMPORT
+import com.example.KrushiMitra.entity.User;
 import com.example.KrushiMitra.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserDetailsServiceImpl implements UserDetailsService {
@@ -19,12 +21,16 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        log.debug("Loading user details for: {}", email);
 
-        // ✅ Now Java knows this is YOUR entity User, not Spring's User
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
+                .orElseThrow(() -> {
+                    log.warn("User not found during authentication: {}", email);
+                    return new UsernameNotFoundException("User not found: " + email);
+                });
 
-        // ✅ Fully qualified Spring Security User to avoid conflict
+        log.debug("User loaded — email: {}, role: {}", user.getEmail(), user.getRole());
+
         return new org.springframework.security.core.userdetails.User(
                 user.getEmail(),
                 user.getPassword(),

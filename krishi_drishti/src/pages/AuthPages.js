@@ -131,12 +131,12 @@ export const RegisterPage = () => {
               <div className="row g-3">
                 <div className="col-12 mb-2">
                   <label className="km-label">Full Name / पूर्ण नाव</label>
-                  <input className="km-input" placeholder="Ramesh Patil" value={form.fullName}
+                  <input className="km-input" placeholder="Virat Kohli" value={form.fullName}
                     onChange={e => set('fullName', e.target.value)} required />
                 </div>
                 <div className="col-12 mb-2">
                   <label className="km-label">Email</label>
-                  <input className="km-input" type="email" placeholder="ramesh@gmail.com" value={form.email}
+                  <input className="km-input" type="email" placeholder="virat@gmail.com" value={form.email}
                     onChange={e => set('email', e.target.value)} required />
                 </div>
                 <div className="col-md-6 mb-2">

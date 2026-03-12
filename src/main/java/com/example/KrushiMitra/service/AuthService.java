@@ -10,10 +10,12 @@ import com.example.KrushiMitra.repository.UserRepository;
 
 import com.example.KrushiMitra.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -24,7 +26,10 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
 
     public AuthResponse register(RegisterRequest request) {
+        log.info("Registration attempt for email: {}", request.getEmail());
+
         if (userRepository.existsByEmail(request.getEmail())) {
+            log.warn("Registration failed — email already registered: {}", request.getEmail());
             throw new IllegalArgumentException("Email already registered: " + request.getEmail());
         }
 
@@ -45,7 +50,10 @@ public class AuthService {
                 .build();
 
         userRepository.save(user);
+        log.info("User registered successfully: {} ({})", user.getFullName(), user.getEmail());
+
         String token = jwtUtil.generateToken(user.getEmail());
+        log.debug("JWT token generated for new user: {}", user.getEmail());
 
         return AuthResponse.builder()
                 .token(token)
@@ -53,25 +61,32 @@ public class AuthService {
                 .fullName(user.getFullName())
                 .role(user.getRole().name())
                 .preferredLanguage(user.getPreferredLanguage())
-                .state(user.getState())               // ✅
-                .district(user.getDistrict())         // ✅
-                .village(user.getVillage())           // ✅
-                .primaryCrop(user.getPrimaryCrop())   // ✅
-                .landSizeAcres(user.getLandSizeAcres()) // ✅
-                .annualIncome(user.getAnnualIncome()) // ✅
-                .category(user.getCategory())         // ✅
+                .state(user.getState())
+                .district(user.getDistrict())
+                .village(user.getVillage())
+                .primaryCrop(user.getPrimaryCrop())
+                .landSizeAcres(user.getLandSizeAcres())
+                .annualIncome(user.getAnnualIncome())
+                .category(user.getCategory())
                 .phone(user.getPhone())
                 .build();
     }
 
     public AuthResponse login(LoginRequest request) {
+        log.info("Login attempt for email: {}", request.getEmail());
+
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+        log.debug("Authentication successful for: {}", request.getEmail());
 
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+                .orElseThrow(() -> {
+                    log.error("User not found after authentication: {}", request.getEmail());
+                    return new ResourceNotFoundException("User not found");
+                });
 
         String token = jwtUtil.generateToken(user.getEmail());
+        log.info("Login successful for user: {} ({})", user.getFullName(), user.getEmail());
 
         return AuthResponse.builder()
                 .token(token)
@@ -79,13 +94,13 @@ public class AuthService {
                 .fullName(user.getFullName())
                 .role(user.getRole().name())
                 .preferredLanguage(user.getPreferredLanguage())
-                .state(user.getState())               // ✅
-                .district(user.getDistrict())         // ✅
-                .village(user.getVillage())           // ✅
-                .primaryCrop(user.getPrimaryCrop())   // ✅
-                .landSizeAcres(user.getLandSizeAcres()) // ✅
-                .annualIncome(user.getAnnualIncome()) // ✅
-                .category(user.getCategory())         // ✅
+                .state(user.getState())
+                .district(user.getDistrict())
+                .village(user.getVillage())
+                .primaryCrop(user.getPrimaryCrop())
+                .landSizeAcres(user.getLandSizeAcres())
+                .annualIncome(user.getAnnualIncome())
+                .category(user.getCategory())
                 .phone(user.getPhone())
 
                 .build();

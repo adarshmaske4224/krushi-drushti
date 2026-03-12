@@ -11,6 +11,8 @@ public class SchemeRecommendationResponse {
     private String benefits;
     private String applicationUrl;
     private String aiReasoning;
+    private String status;
+    private String statusNote;
 
     @Data @AllArgsConstructor @NoArgsConstructor
     public static class ListResponse {

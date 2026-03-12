@@ -10,6 +10,7 @@ const Sidebar = ({ isOpen, onClose }) => {
   const links = [
     { to: '/dashboard', icon: 'fa-gauge-high', label: 'Dashboard', labelMr: 'डॅशबोर्ड' },
     { to: '/ai-doctor', icon: 'fa-robot', label: 'AI Doctor', labelMr: 'कृषी डॉक्टर' },
+    { to: '/crop-recommend', icon: 'fa-seedling', label: 'Crop Recommend', labelMr: 'पीक शिफारस' },
     { to: '/prices', icon: 'fa-indian-rupee-sign', label: 'Crop Prices', labelMr: 'पीक भाव' },
     { to: '/pest', icon: 'fa-bug', label: 'Pest Detection', labelMr: 'कीड ओळख' },
     { to: '/weather', icon: 'fa-cloud-sun-rain', label: 'Weather Alerts', labelMr: 'हवामान' },

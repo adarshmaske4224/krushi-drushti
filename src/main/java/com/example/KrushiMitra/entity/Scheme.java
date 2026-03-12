@@ -2,6 +2,7 @@ package com.example.KrushiMitra.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.Builder.Default;
 
 @Entity
 @Table(name = "schemes")
@@ -30,5 +31,13 @@ public class Scheme {
     private String benefits;
 
     private String applicationUrl;
+    @Default
     private Boolean isActive = true;
+
+    // ACTIVE, DEPRECATED, EXPIRED, SUSPENDED
+    @Default
+    private String status = "ACTIVE";
+
+    @Column(length = 1000)
+    private String statusNote;
 }

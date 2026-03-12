@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import CropPrices from './pages/CropPrices';
 import { PestDetection, WeatherPestPrediction, GovernmentSchemes, SmsAlerts, ProfilePage } from './pages/OtherPages';
 import { AIDoctor } from './pages/AIDoctor';
+import CropRecommendation from './pages/CropRecommendation';
 
 const ProtectedRoute = ({ children }) => {
   const { isLoggedIn, loading } = useAuth();
@@ -51,6 +52,7 @@ function App() {
           <Route path="/schemes" element={<ProtectedRoute><AppLayout><GovernmentSchemes /></AppLayout></ProtectedRoute>} />
           <Route path="/sms" element={<ProtectedRoute><AppLayout><SmsAlerts /></AppLayout></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><AppLayout><ProfilePage /></AppLayout></ProtectedRoute>} />
+          <Route path="/crop-recommend" element={<ProtectedRoute><AppLayout><CropRecommendation /></AppLayout></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/dashboard" />} />
         </Routes>
       </BrowserRouter>

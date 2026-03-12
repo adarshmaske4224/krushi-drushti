@@ -6,12 +6,14 @@ import com.example.KrushiMitra.entity.User;
 import com.example.KrushiMitra.repository.PestReportRepository;
 import com.example.KrushiMitra.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class DashboardService {
@@ -24,19 +26,25 @@ public class DashboardService {
         String email = SecurityContextHolder.getContext()
                 .getAuthentication()
                 .getName();
+        log.info("Fetching dashboard for user: {}", email);
 
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> {
+                    log.error("Dashboard — user not found: {}", email);
+                    return new RuntimeException("User not found");
+                });
 
         List<PestReport> reports =
                 pestReportRepository.findByUserIdOrderByReportedAtDesc(user.getId());
 
         long totalReports = reports.size();
+        log.info("Dashboard for {} — district: {}, totalReports: {}", user.getFullName(), user.getDistrict(), totalReports);
 
         List<String> recentPests = reports.stream()
                 .limit(5)
                 .map(PestReport::getPestName)
                 .collect(Collectors.toList());
+        log.debug("Recent pests: {}", recentPests);
 
         return FarmerDashboardResponse.builder()
                 .farmerName(user.getFullName())

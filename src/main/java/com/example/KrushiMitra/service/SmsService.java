@@ -4,8 +4,10 @@ import com.example.KrushiMitra.entity.SmsAlert;
 import com.example.KrushiMitra.entity.User;
 import com.example.KrushiMitra.repository.SmsAlertRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SmsService {
@@ -14,7 +16,8 @@ public class SmsService {
 
     public void sendSms(User user, String message, String alertType) {
         String phone = user.getPhone() != null ? user.getPhone() : "Unknown";
-        System.out.println("SMS sent to " + phone + " [" + alertType + "]: " + message);
+        log.info("Sending SMS to {} [{}] — type: {}", phone, user.getEmail(), alertType);
+        log.debug("SMS message content: {}", message);
         
         SmsAlert alert = SmsAlert.builder()
                 .user(user)
@@ -25,5 +28,6 @@ public class SmsService {
                 .build();
                 
         smsAlertRepository.save(alert);
+        log.info("SMS alert saved — ID: {}, type: {}, phone: {}", alert.getId(), alertType, phone);
     }
 }

@@ -307,6 +307,8 @@ export const GovernmentSchemes = () => {
 
   useEffect(() => {
     schemeAPI.getAll().then(r => setSchemes(r.data || [])).catch(() => { }).finally(() => setLoading(false));
+    // Eagerly fetch AI recommendations count
+    schemeAPI.getRecommendations().then(r => setRecs(r.data || [])).catch(() => { });
   }, []);
 
   const loadRecs = async () => {
@@ -361,7 +363,7 @@ export const GovernmentSchemes = () => {
           <i className="fas fa-list"></i>All Schemes ({schemes.length})
         </button>
         <button onClick={loadRecs} className={tab === 'recs' ? 'btn-km-primary' : 'btn-km-secondary'}>
-          <i className="fas fa-star"></i>AI Recommendations
+          <i className="fas fa-star"></i>AI Recommendations ({recs.length})
         </button>
       </div>
       {loading && <div className="km-loading-overlay"><div className="km-spinner"></div><p>Loading schemes...</p></div>}

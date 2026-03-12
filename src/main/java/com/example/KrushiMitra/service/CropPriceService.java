@@ -6,6 +6,7 @@ import com.example.KrushiMitra.repository.CropPriceRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -15,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CropPriceService {
@@ -29,11 +31,10 @@ public class CropPriceService {
     public CropPriceResponse getCurrentPrice(String commodity,
                                              String state,
                                              String market,
-                                             String district) { // ✅ added
+                                             String district) {
         try {
-            System.out.println("=== AGMARKNET API CALL ===");
-            System.out.println("Commodity: " + commodity + " | State: " + state
-                    + " | Market: " + market + " | District: " + district);
+            log.info("=== AGMARKNET API CALL === Commodity: {} | State: {} | Market: {} | District: {}",
+                    commodity, state, market, district);
 
             String responseBody = webClient.get()
                     .uri(uriBuilder -> {
@@ -49,7 +50,7 @@ public class CropPriceService {
                                 .queryParam("limit", "10")
                                 .queryParam("sort[arrival_date]", "desc");
 
-                        // ✅ Only add district filter if provided
+                        // Only add district filter if provided
                         if (district != null && !district.trim().isEmpty()) {
                             builder = builder.queryParam(
                                     "filters[district]", district.trim());
@@ -62,19 +63,19 @@ public class CropPriceService {
                     .bodyToMono(String.class)
                     .block();
 
-            System.out.println("Response: " + responseBody);
+            log.debug("AGMARKNET raw response: {}", responseBody);
 
             JsonNode root = objectMapper.readTree(responseBody);
             JsonNode records = root.path("records");
             int total = root.path("total").asInt();
-            System.out.println("Total matching records: " + total);
+            log.info("AGMARKNET total matching records: {}", total);
 
             if (records.isArray() && records.size() > 0) {
                 JsonNode latest = records.get(0);
 
                 String commodity_   = latest.path("commodity").asText();
                 String state_       = latest.path("state").asText();
-                String district_    = latest.path("district").asText(); // ✅ from API
+                String district_    = latest.path("district").asText();
                 String market_      = latest.path("market").asText();
                 String variety_     = latest.path("variety").asText();
                 String grade_       = latest.path("grade").asText();
@@ -83,10 +84,7 @@ public class CropPriceService {
                 double maxPrice_    = parsePrice(latest, "max_price");
                 double modalPrice_  = parsePrice(latest, "modal_price");
 
-                System.out.println("✅ Real price found!"
-                        + " Commodity: " + commodity_
-                        + " | District: " + district_
-                        + " | Modal: " + modalPrice_);
+                log.info("Real price found — Commodity: {} | District: {} | Modal: {}", commodity_, district_, modalPrice_);
 
                 savePriceToDB(commodity_, state_, market_,
                         minPrice_, maxPrice_, modalPrice_);
@@ -97,7 +95,7 @@ public class CropPriceService {
                 return CropPriceResponse.builder()
                         .commodity(commodity_)
                         .state(state_)
-                        .district(district_)   // ✅ real district from API
+                        .district(district_)
                         .market(market_)
                         .variety(variety_)
                         .grade(grade_)
@@ -110,18 +108,18 @@ public class CropPriceService {
                         .build();
 
             } else {
-                System.out.println("⚠️ No records found for given filters");
+                log.warn("No records found from AGMARKNET for commodity: {}, state: {}, market: {}", commodity, state, market);
                 return getFallbackPrice(commodity, state, market);
             }
 
         } catch (Exception e) {
-            System.out.println("❌ AGMARKNET error: " + e.getMessage());
+            log.error("AGMARKNET API error for commodity: {}, state: {}, market: {} — {}", commodity, state, market, e.getMessage(), e);
             return getFallbackPrice(commodity, state, market);
         }
 
     }
 
-    // ✅ Parse price - handles commas and spaces
+    // Parse price - handles commas and spaces
     private double parsePrice(JsonNode node, String field) {
         try {
             String val = node.path(field).asText()
@@ -130,16 +128,17 @@ public class CropPriceService {
                     .trim();
             return Double.parseDouble(val);
         } catch (Exception e) {
+            log.warn("Failed to parse price field '{}': {}", field, e.getMessage());
             return 0.0;
         }
     }
 
-    // ✅ Only include records matching requested commodity
+    // Only include records matching requested commodity
     private List<CropPriceResponse> buildTrend(JsonNode records,
                                                String commodity) {
         List<CropPriceResponse> trend = new ArrayList<>();
         for (JsonNode r : records) {
-            // ✅ Filter — only same commodity in trend
+            // Filter — only same commodity in trend
             if (!r.path("commodity").asText()
                     .equalsIgnoreCase(commodity)) continue;
 
@@ -156,15 +155,17 @@ public class CropPriceService {
         }
         // If less than 2 trend points, fill with mock
         if (trend.size() < 2) {
+            log.debug("Insufficient trend data ({} points), generating mock trend for {}", trend.size(), commodity);
             double base = trend.isEmpty() ? getBasePrice(commodity)
                     : trend.get(0).getModalPrice();
             return getMockWeeklyTrend(commodity, "", "", base);
         }
+        log.debug("Built trend with {} data points for {}", trend.size(), commodity);
         return trend;
     }
 
 
-    // ✅ Save to DB for caching
+    // Save to DB for caching
     private void savePriceToDB(String commodity, String state,
                                String market, double min,
                                double max, double modal) {
@@ -178,12 +179,13 @@ public class CropPriceService {
             price.setModalPrice(modal);
             price.setPriceDate(LocalDate.now());
             cropPriceRepository.save(price);
+            log.debug("Cached price to DB — {} | modal: {}", commodity, modal);
         } catch (Exception e) {
-            System.out.println("DB save error: " + e.getMessage());
+            log.error("Failed to cache price to DB for {}: {}", commodity, e.getMessage(), e);
         }
     }
 
-    // ✅ Fallback chain: DB cache → Mock data
+    // Fallback chain: DB cache → Mock data
     private CropPriceResponse getFallbackPrice(String commodity,
                                                String state,
                                                String market) {
@@ -194,7 +196,7 @@ public class CropPriceService {
 
         if (!cached.isEmpty()) {
             CropPrice c = cached.get(0);
-            System.out.println("📦 Returning DB cached price");
+            log.info("Returning DB cached price for {} (cached on {})", commodity, c.getPriceDate());
             return CropPriceResponse.builder()
                     .commodity(c.getCommodity())
                     .state(c.getState())
@@ -209,7 +211,7 @@ public class CropPriceService {
         }
 
         // Final fallback — mock data
-        System.out.println("🔄 Returning mock price data");
+        log.warn("No cached price found, returning mock price data for {}", commodity);
         double base = getBasePrice(commodity);
         return CropPriceResponse.builder()
                 .commodity(commodity)

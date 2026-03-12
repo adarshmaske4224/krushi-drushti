@@ -4,6 +4,7 @@ import com.example.KrushiMitra.dto.WeatherPestPredictionResponse;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -17,6 +18,7 @@ import com.example.KrushiMitra.repository.UserRepository;
 import com.example.KrushiMitra.entity.User;
 import com.example.KrushiMitra.service.SmsService;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class WeatherPestService {
@@ -40,9 +42,12 @@ public class WeatherPestService {
                         String state,
                         String cropType) throws Exception {
 
+                log.info("Pest prediction request — district: {}, state: {}, cropType: {}", district, state, cropType);
+
                 double[] coords = getCoordinatesForDistrict(district);
                 double lat = coords[0];
                 double lon = coords[1];
+                log.debug("Coordinates for {}: lat={}, lon={}", district, lat, lon);
 
                 String weatherUrl = UriComponentsBuilder
                                 .fromHttpUrl(weatherApiUrl)
@@ -53,6 +58,7 @@ public class WeatherPestService {
                                 .queryParam("timezone", "Asia/Kolkata")
                                 .toUriString();
 
+                log.debug("Fetching weather data from Open-Meteo");
                 String weatherResponse = webClient.get()
                                 .uri(weatherUrl)
                                 .retrieve()
@@ -69,6 +75,9 @@ public class WeatherPestService {
                 int weatherCode = current.path("weather_code").asInt();
                 String weatherCondition = mapWeatherCode(weatherCode);
                 String season = getSeason();
+
+                log.info("Weather data — temp: {}°C, humidity: {}%, rainfall: {}mm, wind: {}km/h, condition: {}, season: {}",
+                        temperature, humidity, rainfall, windSpeed, weatherCondition, season);
 
                 try {
 
@@ -105,6 +114,7 @@ public class WeatherPestService {
 
                         String aiUrl = aiApiUrl;
 
+                        log.debug("Calling Groq AI for pest prediction");
                         String aiResponse = webClient.post()
                                         .uri(aiUrl)
                                         .header("Content-Type", "application/json")
@@ -142,7 +152,12 @@ public class WeatherPestService {
                         response.setWeatherCondition(weatherCondition);
                         response.setSeason(season);
 
+                        log.info("AI pest prediction — risk: {}, predictions count: {}",
+                                response.getOverallRiskLevel(),
+                                aiJson.path("predictions").size());
+
                         if ("HIGH".equalsIgnoreCase(response.getOverallRiskLevel())) {
+                                log.warn("HIGH pest risk detected for district: {}, crop: {}", district, cropType);
 
                                 User user = userRepository.findByDistrict(district).stream().findFirst().orElse(null);
                                 if (user != null) {
@@ -151,6 +166,9 @@ public class WeatherPestService {
                                                         "⚠ krishidrishti Weather Alert\n" +
                                                                         "High pest risk detected for crop: " + cropType +
                                                                         "\nInspect your crops immediately.", "WEATHER_ALERT");
+                                        log.info("Weather alert SMS sent to user in district: {}", district);
+                                } else {
+                                        log.warn("No user found in district {} to send weather alert SMS", district);
                                 }
                         }
 
@@ -158,7 +176,7 @@ public class WeatherPestService {
 
                 } catch (Exception e) {
 
-                        System.out.println("Gemini failed, using fallback prediction");
+                        log.warn("Groq AI pest prediction failed, using fallback — error: {}", e.getMessage(), e);
 
                         return fallbackPrediction(
                                         temperature,
@@ -179,6 +197,9 @@ public class WeatherPestService {
                         String weatherCondition,
                         String season,
                         String cropType) {
+
+                log.info("Generating fallback pest prediction — temp: {}°C, humidity: {}%, rainfall: {}mm",
+                        temperature, humidity, rainfall);
 
                 WeatherPestPredictionResponse response = new WeatherPestPredictionResponse();
 
@@ -239,6 +260,8 @@ public class WeatherPestService {
                         prevention = "प्रतिबंधात्मक उपाय म्हणून निम अर्काची फवारणी करू शकता.";
                 }
 
+                log.info("Fallback prediction — risk: {}, pest: {}", risk, pest);
+
                 WeatherPestPredictionResponse.PestPrediction prediction = WeatherPestPredictionResponse.PestPrediction
                                 .builder()
                                 .pestName(pest)
@@ -290,6 +313,7 @@ public class WeatherPestService {
         }
 
         private double[] getCoordinatesForDistrict(String district) {
+                log.debug("Geocoding district: {}", district);
                 try {
                         String geoUrl = UriComponentsBuilder
                                         .fromHttpUrl("https://geocoding-api.open-meteo.com/v1/search")
@@ -310,11 +334,13 @@ public class WeatherPestService {
                                 JsonNode firstResult = root.path("results").get(0);
                                 double lat = firstResult.path("latitude").asDouble();
                                 double lon = firstResult.path("longitude").asDouble();
+                                log.debug("Geocoded {} to lat: {}, lon: {}", district, lat, lon);
                                 return new double[] { lat, lon };
                         }
+                        log.warn("No geocoding results found for district: {}", district);
                 } catch (Exception e) {
-                        System.err.println(
-                                        "Failed to fetch coordinates for district: " + district + ". Using default.");
+                        log.error("Failed to geocode district: {} — using Pune default coordinates. Error: {}",
+                                district, e.getMessage(), e);
                 }
                 // Default to Pune coordinates if not found
                 return new double[] { 18.5204, 73.8567 };

@@ -132,7 +132,7 @@ h6 {
 /* ===== Sidebar ===== */
 .km-sidebar {
   width: 260px;
-  min-height: calc(100vh - 65px);
+  height: calc(100vh - 65px);
   background: linear-gradient(180deg, var(--green-dark) 0%, #0d3318 100%);
   padding: 1.5rem 1rem;
   position: fixed;
@@ -141,6 +141,8 @@ h6 {
   overflow-y: auto;
   z-index: 100;
   box-shadow: 4px 0 20px rgba(15, 61, 26, 0.2);
+  display: flex;
+  flex-direction: column;
 }
 
 .km-sidebar .sidebar-section {
