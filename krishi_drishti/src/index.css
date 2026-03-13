@@ -1,34 +1,34 @@
 /* ===== krishidrishti Global Styles ===== */
 :root {
-  --green-dark: #0f3d1a;
-  --green-primary: #1a6b2f;
-  --green-mid: #2d8f47;
-  --green-light: #4db86a;
-  --green-pale: #e8f5ec;
-  --green-mist: #f0faf2;
-  --gold: #e8a820;
-  --gold-light: #f5c842;
-  --earth: #6b4c2a;
-  --earth-light: #c4956a;
-  --sky: #2196a8;
-  --red-alert: #c0392b;
-  --text-dark: #1a2e1d;
-  --text-mid: #3d5940;
-  --text-light: #7a9e7e;
+  --green-dark: #082d14;        /* Deep Forest */
+  --green-primary: #2e7d32;     /* Fresh Leaf */
+  --green-mid: #43a047;         /* Active Growth */
+  --green-light: #81c784;       /* Healthy Sprout */
+  --green-pale: #e8f5e9;        /* Morning Dew */
+  --green-mist: #f1f8e9;        /* Warm Breeze */
+  --gold: #ffa000;              /* Harvest Gold */
+  --gold-light: #ffc107;        /* Sunbeams */
+  --earth: #795548;             /* Sienna Soil */
+  --earth-light: #a1887f;       /* Tilled Earth */
+  --sky: #0288d1;               /* Clear Sky */
+  --red-alert: #d32f2f;         /* Pests Alert */
+  --text-dark: #1b281b;         /* Deep Shade */
+  --text-mid: #455a45;          /* Foliage */
+  --text-light: #689f38;        /* Grass Edge */
   --white: #ffffff;
-  --off-white: #f8fdf8;
-  --border: #d4e8d6;
-  --shadow-sm: 0 2px 8px rgba(15, 61, 26, 0.08);
-  --shadow-md: 0 4px 20px rgba(15, 61, 26, 0.12);
-  --shadow-lg: 0 8px 40px rgba(15, 61, 26, 0.18);
-  --radius-sm: 8px;
-  --radius-md: 14px;
-  --radius-lg: 22px;
-  --radius-xl: 32px;
+  --off-white: #fffdf5;         /* Warm Mist Background */
+  --border: #e0eadd;
+  --shadow-sm: 0 4px 12px rgba(8, 45, 20, 0.06);
+  --shadow-md: 0 8px 24px rgba(8, 45, 20, 0.1);
+  --shadow-lg: 0 16px 48px rgba(8, 45, 20, 0.15);
+  --radius-sm: 10px;
+  --radius-md: 18px;
+  --radius-lg: 28px;
+  --radius-xl: 40px;
   --font-display: 'Syne', sans-serif;
   --font-body: 'DM Sans', sans-serif;
   --font-marathi: 'Tiro Devanagari Marathi', serif;
-  --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 * {
@@ -252,9 +252,10 @@ h6 {
 
 /* ===== Cards ===== */
 .km-card {
-  background: var(--white);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
   border-radius: var(--radius-md);
-  border: 1px solid var(--border);
+  border: 1px solid rgba(255, 255, 255, 0.5);
   box-shadow: var(--shadow-sm);
   padding: 1.75rem;
   transition: var(--transition);
@@ -263,7 +264,8 @@ h6 {
 
 .km-card:hover {
   box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
+  transform: translateY(-4px);
+  background: rgba(255, 255, 255, 0.95);
 }
 
 .km-card-header {

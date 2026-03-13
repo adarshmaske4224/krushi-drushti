@@ -26,17 +26,17 @@ import java.util.List;
 
     // ── 0. Season Match (15 pts) ─────────────────────────────────────────
     public double calculateSeasonMatch(CropInformation crop, String detectedSeason) {
-        if (crop.getSeason() == null || detectedSeason == null) return 7.5;
+        if (crop.getSeason() == null || detectedSeason == null) return 0; // Mandatory: must have season
         String s = crop.getSeason().toUpperCase();
         String d = detectedSeason.toUpperCase();
         
         if (s.contains(d) || s.contains("WHOLE YEAR") || s.contains("ALL")) {
             return 15;
         }
-        return 0; // Mismatch
+        return 0; // Strict mismatch
     }
 
-    // ── 1. Climate Suitability (20 pts) ──────────────────────────────────
+    // ── 1. Climate Suitability (25 pts) ──────────────────────────────────
     public double calculateClimateSuitability(CropInformation crop, DistrictClimate district) {
         double tempScore = calculateRangeOverlap(
                 crop.getTempMin(), crop.getTempMax(),
@@ -46,27 +46,27 @@ import java.util.List;
                 crop.getRainfallMin(), crop.getRainfallMax(),
                 district.getRainfallMin(), district.getRainfallMax());
 
-        return (tempScore * 0.6 + rainScore * 0.4) * 20;
+        return (tempScore * 0.6 + rainScore * 0.4) * 25;
     }
 
-    // ── 2. Soil Compatibility (15 pts) ───────────────────────────────────
+    // ── 2. Soil Compatibility (20 pts) ───────────────────────────────────
     public double calculateSoilCompatibility(CropInformation crop, String inputSoilType) {
         if (crop.getSoilType() == null || inputSoilType == null) {
-            return 7.5;
+            return 10;
         }
 
         String cropSoil = crop.getSoilType().toLowerCase().trim();
         String userSoil = inputSoilType.toLowerCase().trim();
 
         if (userSoil.contains(cropSoil) || cropSoil.contains(userSoil)) {
-            return 15;
+            return 20;
         }
 
         String[] cropSoils = cropSoil.split("[,/\\s]+");
         String[] userSoils = userSoil.split("[,/\\s]+");
         for (String cs : cropSoils) {
             for (String us : userSoils) {
-                if (cs.equals(us)) return 10;
+                if (cs.equals(us)) return 14;
             }
         }
         return 0; // Mismatch
@@ -105,15 +105,15 @@ import java.util.List;
         return 5;
     }
 
-    // ── 5. Growth Duration (5 pts) ───────────────────────────────────────
+    // ── 5. Growth Duration (10 pts) ───────────────────────────────────────
     public double calculateGrowthDuration(CropInformation crop) {
-        if (crop.getGrowthDays() == null) return 2.5;
+        if (crop.getGrowthDays() == null) return 5;
 
         int days = crop.getGrowthDays();
-        if (days <= 90)  return 5;
-        if (days <= 120) return 4;
-        if (days <= 150) return 3;
-        return 2;
+        if (days <= 90)  return 10;
+        if (days <= 120) return 8;
+        if (days <= 150) return 6;
+        return 4;
     }
 
     // ── 6. Market Demand (5 pts) ─────────────────────────────────────────
@@ -139,16 +139,20 @@ import java.util.List;
     //  Aggregate score
     // ═══════════════════════════════════════════════════════════════════
     public int calculateTotalScore(CropInformation crop, DistrictClimate district, String soilType, String irrigation, String season) {
-        double total = 0;
-        total += calculateSeasonMatch(crop, season);            // 15
-        total += calculateClimateSuitability(crop, district);   // 20
-        total += calculateSoilCompatibility(crop, soilType);    // 15
-        total += calculateIrrigationCompatibility(crop, irrigation); // 15
-        total += calculateProfitPotential(crop);                // 25
-        total += calculateGrowthDuration(crop);                 //  5
-        total += calculateMarketDemand(crop);                   //  5
+        // MANDATORY: Season match is strict. If season is wrong, other factors don't matter.
+        double seasonScore = calculateSeasonMatch(crop, season);
+        if (seasonScore == 0) return 0;
 
-        return (int) Math.round(Math.min(total, 100));
+        // Note: Season is used as a hard gate. 
+        // The core suitability score is calculated from the following factors (totalling 100):
+        double suitabilityScore = calculateClimateSuitability(crop, district) + // 25
+                                 calculateSoilCompatibility(crop, soilType) +    // 20
+                                 calculateIrrigationCompatibility(crop, irrigation) + // 15
+                                 calculateProfitPotential(crop) +                // 25
+                                 calculateGrowthDuration(crop) +                 // 10
+                                 calculateMarketDemand(crop);                    // 5
+
+        return (int) Math.round(Math.min(suitabilityScore, 100));
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -198,7 +202,7 @@ import java.util.List;
                 fmt(district.getRainfallMin()), fmt(district.getRainfallMax()));
         }
         breakdown.add(ScoreBreakdownDTO.builder()
-                .factor("हवामान अनुकूलता (Climate)").maxPoints(20)
+                .factor("हवामान अनुकूलता (Climate)").maxPoints(25)
                 .scored((int) Math.round(climateScore)).reason(climateReason).build());
 
         // 2. Soil Compatibility
@@ -215,7 +219,7 @@ import java.util.List;
                     translateSoil(crop.getSoilType()), translateSoil(soilType));
         }
         breakdown.add(ScoreBreakdownDTO.builder()
-                .factor("मातीची सुसंगतता (Soil)").maxPoints(15)
+                .factor("मातीची सुसंगतता (Soil)").maxPoints(20)
                 .scored((int) Math.round(soilScore)).reason(soilReason).build());
 
         // 3. Irrigation Compatibility
@@ -261,7 +265,7 @@ import java.util.List;
             growthReason = "पीक कालावधीची माहिती उपलब्ध नाही.";
         }
         breakdown.add(ScoreBreakdownDTO.builder()
-                .factor("पीक कालावधी (Growth)").maxPoints(5)
+                .factor("पीक कालावधी (Growth)").maxPoints(10)
                 .scored((int) Math.round(growthScore)).reason(growthReason).build());
 
         // 6. Market Demand

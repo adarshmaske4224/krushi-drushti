@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -27,11 +28,11 @@ public class CropRecommendationService {
     private final CropScoringService cropScoringService;
 
     /**
-     * Returns the top 5 recommended crops based on district, month, irrigation and soil type.
+     * Returns the top 5 recommended crops for each category based on district, month, irrigation and soil type.
      */
     public CropRecommendationResponse getRecommendations(CropRecommendationRequest request) {
 
-        log.info("Processing crop recommendations for district: {}, month: {}, irrigation: {}, soil: {}", 
+        log.info("Processing multi-category crop recommendations for district: {}, month: {}, irrigation: {}, soil: {}", 
                 request.getDistrict(), request.getMonth(), request.getIrrigation(), request.getSoilType());
 
         // 1. Fetch district climate data
@@ -49,8 +50,19 @@ public class CropRecommendationService {
         // 3. Fetch all crops
         List<CropInformation> allCrops = cropRepository.findAll();
         
-        // 4. Score all crops (No strict filtering, but pass season to scoring service)
-        List<CropRecommendationDTO> recommendations = allCrops.stream()
+        // Debug: Log all categories in DB
+        java.util.Set<String> dbCategories = allCrops.stream()
+                .map(c -> c.getCategory() != null ? c.getCategory() : "NULL")
+                .collect(java.util.stream.Collectors.toSet());
+        log.info("Categories found in database: {}", dbCategories);
+        
+        // 4. Filter and score crops
+        List<CropRecommendationDTO> allScoredCrops = allCrops.stream()
+                .filter(crop -> {
+                    // STRICT seasonal filter: only show crops that match the detected season perfectly
+                    double seasonMatch = cropScoringService.calculateSeasonMatch(crop, season);
+                    return seasonMatch >= 15.0; 
+                })
                 .map(crop -> {
                     int score = cropScoringService.calculateTotalScore(crop, district, request.getSoilType(), request.getIrrigation(), season);
                     double profit = cropScoringService.calculateProfit(crop);
@@ -58,25 +70,60 @@ public class CropRecommendationService {
                             cropScoringService.getDetailedBreakdown(crop, district, request.getSoilType(), request.getIrrigation(), season);
 
                     return CropRecommendationDTO.builder()
-                            .crop(crop.getCropName())
+                            .crop(crop.getCropName() != null ? crop.getCropName().trim() : "Unknown")
                             .score(score)
                             .expectedProfit(profit)
                             .season(crop.getSeason())
                             .soilType(crop.getSoilType())
                             .waterRequirement(crop.getWaterRequirement())
                             .growthDays(crop.getGrowthDays())
-                            .category(crop.getCategory())
+                            .category(crop.getCategory() != null ? crop.getCategory().trim() : "Other")
                             .scoreBreakdown(breakdown)
                             .build();
                 })
-                .sorted(Comparator.comparingInt(CropRecommendationDTO::getScore).reversed())
-                .limit(5)
                 .collect(Collectors.toList());
+
+        // 5. Group by crop name first to remove duplicates (keep highest score)
+        // Use normalized name (trimmed, case-insensitive) as key
+        Map<String, CropRecommendationDTO> distinctCrops = new java.util.HashMap<>();
+        for (CropRecommendationDTO rec : allScoredCrops) {
+            String key = rec.getCrop().toLowerCase().trim();
+            if (!distinctCrops.containsKey(key) || rec.getScore() > distinctCrops.get(key).getScore()) {
+                distinctCrops.put(key, rec);
+            }
+        }
+
+        log.info("Total distinct crops after scoring: {}", distinctCrops.size());
+
+        // 6. Group by category and take top 5
+        Map<String, List<CropRecommendationDTO>> groupedRecommendations = distinctCrops.values().stream()
+                .collect(Collectors.groupingBy(crop -> {
+                    String cat = crop.getCategory().toLowerCase();
+                    if (cat.contains("grain") || cat.contains("cereal") || cat.contains("धान्य")) return "Grain";
+                    if (cat.contains("pulse") || cat.contains("oilseed") || cat.contains("seed") || cat.contains("कडधान्य") || cat.contains("तेलबिया")) return "PulseOilseed";
+                    if (cat.contains("vegetable") || cat.contains("veg") || cat.contains("भाजीपाला")) return "Vegetable";
+                    if (cat.contains("fruit") || cat.contains("फळे")) return "Fruit";
+                    return "Other";
+                }))
+                .entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        e -> e.getValue().stream()
+                                .sorted(Comparator.comparingInt(CropRecommendationDTO::getScore).reversed())
+                                .limit(5)
+                                .collect(Collectors.toList())
+                ));
+        
+        // Ensure all 4 required categories are present in the response
+        String[] requiredCategories = {"Grain", "PulseOilseed", "Vegetable", "Fruit"};
+        for (String cat : requiredCategories) {
+            groupedRecommendations.putIfAbsent(cat, new java.util.ArrayList<>());
+        }
 
         return CropRecommendationResponse.builder()
                 .district(district.getDistrictName())
                 .season(season)
-                .recommendations(recommendations)
+                .recommendations(groupedRecommendations)
                 .build();
     }
 

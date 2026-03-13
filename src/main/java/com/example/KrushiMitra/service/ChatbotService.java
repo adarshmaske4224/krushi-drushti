@@ -24,23 +24,37 @@ public class ChatbotService {
         @Value("${ai.api.key}")
         private String aiApiKey;
 
+        @Value("${ai.api.model:llama-3.3-70b-versatile}")
+        private String aiApiModel;
+
         public String askGemini(String question, String lang) throws Exception {
                 log.info("Chatbot query received — lang: {}, question length: {}", lang, question != null ? question.length() : 0);
                 log.debug("Chatbot question: {}", question);
 
                 String langNote = "mr".equalsIgnoreCase(lang) ? "Marathi" : "English";
-                String prompt = "You are 'KrishiDrishti AI Crop Doctor', an expert agricultural advisor in Maharashtra, India. "
-                                + "A farmer is asking you a question. They might type Marathi in English alphabet (Hinglish/Latin script). "
-                                + "You must understand their question but reply with a helpful, friendly, and practical answer. "
-                                + "Respond ONLY in " + langNote + ". "
-                                + ("mr".equalsIgnoreCase(lang)
-                                                ? "CRITICAL RULE: Your complete response MUST BE strictly written in proper Devanagari Marathi script (मराठी लिपी). Do NOT use English alphabets in your response."
-                                                : "")
-                                + "\n\nFarmer's Question: " + question;
+                
+                StringBuilder promptBuilder = new StringBuilder();
+                promptBuilder.append("You are 'KrishiDrishti AI Crop Doctor', a highly experienced agricultural consultant specializing in farming in Maharashtra, India.\n\n");
+                promptBuilder.append("OBJECTIVE: Provide practical, scientifically sound, and empathetic advice to farmers. Keep instructions clear and actionable.\n");
+                promptBuilder.append("LANGUAGE RULES:\n");
+                promptBuilder.append("- Respond ONLY in ").append(langNote).append(".\n");
+                
+                if ("mr".equalsIgnoreCase(lang)) {
+                    promptBuilder.append("- Write strictly in Devanagari Marathi script.\n");
+                    promptBuilder.append("- You MAY use English technical terms (like 'NPK', 'Urea', 'pesticide', 'fungus') in parentheses next to Marathi terms if it helps clarity.\n");
+                    promptBuilder.append("- Maintain a respectful and helpful tone suitable for a farmer (बळीराजा).\n");
+                } else {
+                    promptBuilder.append("- Use simple, professional English.\n");
+                }
+                
+                promptBuilder.append("\nFarmer's Question/Context:\n").append(question);
+
+                String prompt = promptBuilder.toString();
 
                 Map<String, Object> requestBody = Map.of(
-                                "model", "llama-3.1-8b-instant",
+                                "model", aiApiModel,
                                 "messages", List.of(
+                                                Map.of("role", "system", "content", "You are a helpful agricultural advisor for Maharashtra farmers."),
                                                 Map.of("role", "user", "content", prompt)));
 
                 String url = aiApiUrl;

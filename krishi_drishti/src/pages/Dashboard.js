@@ -104,46 +104,53 @@ const Dashboard = () => {
     <div className="fade-in">
       {/* Welcome Banner */}
       <div style={{
-        background: 'linear-gradient(135deg, var(--green-dark) 0%, var(--green-primary) 60%, var(--green-mid) 100%)',
-        borderRadius: 'var(--radius-lg)', padding: '2rem 2.5rem', marginBottom: '2rem',
-        position: 'relative', overflow: 'hidden', color: 'white'
+        background: 'linear-gradient(135deg, var(--green-dark) 0%, var(--green-primary) 50%, var(--gold) 130%)',
+        borderRadius: 'var(--radius-lg)', padding: '2.5rem 3rem', marginBottom: '2.5rem',
+        position: 'relative', overflow: 'hidden', color: 'white',
+        boxShadow: '0 20px 40px rgba(8, 45, 20, 0.2)'
       }}>
-        <div style={{ position: 'absolute', right: '-20px', top: '-20px', fontSize: '8rem', opacity: 0.07 }}>🌾</div>
-        <div style={{ position: 'absolute', right: '120px', bottom: '-30px', fontSize: '6rem', opacity: 0.05 }}>🚜</div>
-        <p style={{ fontSize: '0.85rem', opacity: 0.7, marginBottom: '4px' }}>{greeting}</p>
-        <h1 style={{ color: 'white', fontSize: '2rem', fontWeight: 800, marginBottom: '8px' }}>
-          {user?.fullName?.split(' ')[0] || 'Farmer'} <span style={{ opacity: 0.6 }}>👋</span>
+        <div style={{ position: 'absolute', right: '-10px', top: '-10px', fontSize: '9rem', opacity: 0.1, transform: 'rotate(15deg)' }}>🌾</div>
+        <div style={{ position: 'absolute', right: '140px', bottom: '-20px', fontSize: '7rem', opacity: 0.08, transform: 'rotate(-10deg)' }}>🚜</div>
+        <p style={{ fontSize: '0.9rem', opacity: 0.8, marginBottom: '6px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>{greeting}</p>
+        <h1 style={{ color: 'white', fontSize: '2.5rem', fontWeight: 800, marginBottom: '10px', letterSpacing: '-0.03em' }}>
+          {user?.fullName?.split(' ')[0] || 'Farmer'} <span style={{ opacity: 0.8 }}>👋</span>
         </h1>
-        <p style={{ opacity: 0.8, marginBottom: '1.25rem', fontSize: '0.95rem' }}>
+        <p style={{ opacity: 0.9, marginBottom: '1.5rem', fontSize: '1.05rem', maxWidth: '500px' }}>
           {t('welcomeSub', lang)}
         </p>
-        <div className="d-flex gap-2 flex-wrap mt-3">
+        <div className="d-flex gap-3 flex-wrap mt-4">
           <span style={{
-            background: 'rgba(255,255,255,0.15)',
-            padding: '8px 16px',
-            borderRadius: '20px',
-            fontSize: '0.85rem',
-            lineHeight: '1.2'
+            background: 'rgba(255,255,255,0.12)',
+            backdropFilter: 'blur(8px)',
+            padding: '10px 20px',
+            borderRadius: '30px',
+            fontSize: '0.9rem',
+            fontWeight: 500,
+            border: '1px solid rgba(255,255,255,0.2)'
           }}>
-            <i className="fas fa-map-marker-alt me-2"></i>{user?.district}, {user?.state}
+            <i className="fas fa-map-marker-alt me-2" style={{ color: 'var(--gold-light)' }}></i>{user?.district}, {user?.state}
           </span>
           <span style={{
-            background: 'rgba(255,255,255,0.15)',
-            padding: '8px 16px',
-            borderRadius: '20px',
-            fontSize: '0.85rem',
-            lineHeight: '1.2'
+            background: 'rgba(255,255,255,0.12)',
+            backdropFilter: 'blur(8px)',
+            padding: '10px 20px',
+            borderRadius: '30px',
+            fontSize: '0.9rem',
+            fontWeight: 500,
+            border: '1px solid rgba(255,255,255,0.2)'
           }}>
-            <i className="fas fa-seedling me-2"></i>{user?.primaryCrop}
+            <i className="fas fa-seedling me-2" style={{ color: 'var(--green-light)' }}></i>{user?.primaryCrop}
           </span>
           <span style={{
-            background: 'rgba(255,255,255,0.15)',
-            padding: '8px 16px',
-            borderRadius: '20px',
-            fontSize: '0.85rem',
-            lineHeight: '1.2'
+            background: 'rgba(255,255,255,0.12)',
+            backdropFilter: 'blur(8px)',
+            padding: '10px 20px',
+            borderRadius: '30px',
+            fontSize: '0.9rem',
+            fontWeight: 500,
+            border: '1px solid rgba(255,255,255,0.2)'
           }}>
-            <i className="fas fa-ruler-combined me-2"></i>{user?.landSizeAcres} {t('acres', lang)}
+            <i className="fas fa-ruler-combined me-2" style={{ color: 'var(--gold)' }}></i>{user?.landSizeAcres} {t('acres', lang)}
           </span>
         </div>
       </div>

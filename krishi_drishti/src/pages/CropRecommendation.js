@@ -167,7 +167,11 @@ const LOCALES = {
     'Banana': 'Banana',
     'Pomegranate': 'Pomegranate',
     'Grapes': 'Grapes',
-    'Mango': 'Mango'
+    'Mango': 'Mango',
+    'Grain': 'Grain Crops',
+    'PulseOilseed': 'Pulses & Oilseeds',
+    'Vegetable': 'Vegetables',
+    'Fruit': 'Fruits'
   },
   mr: {
     // Page Header
@@ -219,6 +223,10 @@ const LOCALES = {
     'Profit': 'नफा',
     'Growth': 'वाढ',
     'Market': 'बाजार',
+    'Grain': 'धान्य पीक (Grain Crops)',
+    'PulseOilseed': 'कडधान्य आणि तेलबिया (Pulses & Oilseeds)',
+    'Vegetable': 'भाजीपाला (Vegetables)',
+    'Fruit': 'फळे (Fruits)',
 
     // Empty/Loading
     emptyTitle: 'तुमच्या शेतासाठी सर्वोत्तम पिके शोधा',
@@ -287,14 +295,17 @@ const CropRecommendation = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [expandedIdx, setExpandedIdx] = useState(null);
+  const [expandedId, setExpandedId] = useState(null); // category-index
 
-  const toggleExpand = (idx) => setExpandedIdx(prev => prev === idx ? null : idx);
+  const toggleExpand = (cat, idx) => {
+    const id = `${cat}-${idx}`;
+    setExpandedId(prev => prev === id ? null : id);
+  };
 
   const handleSearch = async (e) => {
     e.preventDefault();
     if (!district.trim()) return;
-    setLoading(true); setError(''); setData(null); setExpandedIdx(null);
+    setLoading(true); setError(''); setData(null); setExpandedId(null);
     try {
       const res = await cropRecommendAPI.getRecommendations({
         district: district.trim(),
@@ -410,117 +421,138 @@ const CropRecommendation = () => {
             </div>
           </div>
 
-          {/* Cards */}
-          <div style={{ display: 'grid', gap: '1rem' }}>
-            {data.recommendations?.map((rec, idx) => {
-              const isExpanded = expandedIdx === idx;
-              return (
-                <div className="stagger-enter" key={idx}>
-                  <div className="km-card" style={{
-                    borderLeft: `4px solid ${rec.score >= 80 ? 'var(--green-primary)' : rec.score >= 60 ? 'var(--gold)' : 'var(--red-alert)'}`,
-                    padding: 0, overflow: 'hidden', cursor: 'pointer'
-                  }}>
-                    {/* Main row */}
-                    <div onClick={() => toggleExpand(idx)} style={{
-                      display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap',
-                      padding: '1.25rem 1.75rem'
-                    }}>
-                      {/* Rank */}
-                      <div style={{ textAlign: 'center', minWidth: 44 }}>
-                        <div style={{ fontSize: '1.8rem', lineHeight: 1 }}>{MEDALS[idx]}</div>
-                        <div style={{ fontSize: '0.65rem', color: 'var(--text-light)', fontWeight: 700, textTransform: 'uppercase', marginTop: 4 }}>{t('rank', user?.preferredLanguage)} {idx + 1}</div>
-                      </div>
-
-                      {/* Crop Info */}
-                      <div style={{ flex: 1, minWidth: 140 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-                          <span style={{ fontSize: '1.6rem' }}>{getCropEmoji(rec.crop)}</span>
-                          <h5 style={{ margin: 0, fontWeight: 800, fontSize: '1.15rem' }}>{t(rec.crop, user?.preferredLanguage)}</h5>
-                        </div>
-                        {/* Quick Tags */}
-                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
-                          {rec.season && <span style={tagStyle('green')}><i className="fas fa-calendar-alt me-1"></i>{t(rec.season, user?.preferredLanguage)}</span>}
-                          {rec.soilType && <span style={tagStyle('earth')}><i className="fas fa-mountain me-1"></i>{t(rec.soilType, user?.preferredLanguage)}</span>}
-                          {rec.waterRequirement && <span style={tagStyle('sky')}><i className="fas fa-droplet me-1"></i>{t('waterRequirement', user?.preferredLanguage)}: {t(rec.waterRequirement, user?.preferredLanguage)}</span>}
-                          {rec.growthDays && <span style={tagStyle('gold')}><i className="fas fa-clock me-1"></i>{rec.growthDays} {t('days', user?.preferredLanguage)}</span>}
-                        </div>
-                        {/* Profit */}
-                        <div style={{ marginTop: 8 }}>
-                          <div style={{ fontSize: '0.7rem', color: 'var(--text-light)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('expectedProfit', user?.preferredLanguage)}</div>
-                          <div style={{ fontSize: '1.25rem', fontWeight: 800, fontFamily: 'var(--font-display)', color: rec.expectedProfit >= 0 ? 'var(--green-primary)' : 'var(--red-alert)' }}>
-                            ₹{Math.abs(rec.expectedProfit).toLocaleString('en-IN')}
-                            <small style={{ fontSize: '0.7rem', fontWeight: 500, color: 'var(--text-light)', marginLeft: 4 }}>{t('perAcre', user?.preferredLanguage)}</small>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Score Ring */}
-                      <div style={{ textAlign: 'center' }}>
-                        <ScoreRing score={rec.score} />
-                        <div style={{ fontSize: '0.65rem', color: 'var(--text-light)', fontWeight: 700, textTransform: 'uppercase', marginTop: 4 }}>
-                          {rec.score >= 80 ? t('excellent', user?.preferredLanguage) : rec.score >= 60 ? t('good', user?.preferredLanguage) : t('average', user?.preferredLanguage)}
-                        </div>
-                        <div style={{ fontSize: '0.7rem', color: 'var(--green-primary)', marginTop: 6, fontWeight: 600 }}>
-                          <i className={`fas fa-chevron-${isExpanded ? 'up' : 'down'} me-1`}></i>
-                          {isExpanded ? t('hideDetails', user?.preferredLanguage) : t('viewBreakdown', user?.preferredLanguage)}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Breakdown Panel */}
-                    <div style={{
-                      maxHeight: isExpanded ? 1200 : 0,
-                      overflow: 'hidden',
-                      transition: 'max-height 0.4s ease',
-                    }}>
-                      <div style={{
-                        borderTop: '1px solid var(--border)',
-                        padding: '1.25rem 1.75rem',
-                        background: 'var(--green-mist)'
-                      }}>
-                        <h6 style={{ fontWeight: 700, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <i className="fas fa-chart-bar" style={{ color: 'var(--green-primary)' }}></i>
-                          {t('breakdownTitle', user?.preferredLanguage)}
-                        </h6>
-
-                        <div style={{ display: 'grid', gap: '0.75rem' }}>
-                          {rec.scoreBreakdown?.map((b, bi) => (
-                            <div key={bi} style={{
-                              background: 'white', borderRadius: 'var(--radius-sm)',
-                              border: '1px solid var(--border)', padding: '0.85rem 1rem',
-                              transition: 'var(--transition)'
-                            }}>
-                              {/* Factor header row */}
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                                <span style={{ fontSize: '1.2rem' }}>{FACTOR_ICONS[b.factor.split('(')[1]?.replace(')', '')] || FACTOR_ICONS[b.factor] || '📊'}</span>
-                                <span style={{ fontWeight: 700, fontSize: '0.85rem', flex: 1 }}>{t(b.factor.split('(')[1]?.replace(')', '') || b.factor, user?.preferredLanguage)}</span>
-                                <MiniBar scored={b.scored} max={b.maxPoints} />
-                                <span style={{
-                                  fontWeight: 800, fontSize: '0.8rem', fontFamily: 'var(--font-display)',
-                                  color: (b.scored / b.maxPoints) >= 0.75 ? 'var(--green-primary)'
-                                    : (b.scored / b.maxPoints) >= 0.5 ? 'var(--gold)' : 'var(--red-alert)',
-                                  minWidth: 55, textAlign: 'right'
-                                }}>
-                                  {b.scored}/{b.maxPoints} गुण
-                                </span>
-                              </div>
-                              {/* Reason text */}
-                              <div style={{
-                                fontSize: '0.82rem', color: 'var(--text-mid)', lineHeight: 1.6,
-                                paddingLeft: 34, borderLeft: '3px solid var(--green-pale)', marginLeft: 4
-                              }}>
-                                {b.reason}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+          {/* Grouped results by category - Table View */}
+          {['Grain', 'PulseOilseed', 'Vegetable', 'Fruit'].map((cat) => (
+            <div key={cat} className="km-card mb-4" style={{ padding: '1.5rem' }}>
+              <div className="d-flex align-items-center gap-3 mb-3 pb-2" style={{ borderBottom: '2px solid var(--green-pale)' }}>
+                <div style={{ fontSize: '1.5rem' }}>
+                  {cat === 'Grain' ? '🌾' : cat === 'PulseOilseed' ? '🫘' : cat === 'Vegetable' ? '🥦' : '🍎'}
                 </div>
-              );
-            })}
-          </div>
+                <h4 style={{ margin: 0, fontWeight: 800, color: 'var(--green-dark)' }}>{t(cat, user?.preferredLanguage)}</h4>
+              </div>
+
+              <div className="table-responsive">
+                <table className="km-table" style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 8px' }}>
+                  <thead>
+                    <tr style={{ textAlign: 'left', color: 'var(--text-light)', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      <th style={{ padding: '0.75rem 1rem' }}>{user?.preferredLanguage === 'mr' ? 'पीक (Crop)' : 'Crop'}</th>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>{user?.preferredLanguage === 'mr' ? 'गुण (Score)' : 'Score'}</th>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>{user?.preferredLanguage === 'mr' ? 'अंदाजित नफा (Profit)' : 'Expected Profit'}</th>
+                      <th style={{ width: 50 }}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.recommendations[cat]?.length > 0 ? (
+                      data.recommendations[cat].map((rec, idx) => {
+                        const id = `${cat}-${idx}`;
+                        const isExpanded = expandedId === id;
+                        return (
+                          <React.Fragment key={id}>
+                            <tr 
+                              onClick={() => toggleExpand(cat, idx)}
+                              className="stagger-enter"
+                              style={{ 
+                                background: 'white', 
+                                cursor: 'pointer',
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+                                transition: 'transform 0.2s ease',
+                                borderRadius: '12px'
+                              }}
+                              onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                              onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                            >
+                              <td style={{ padding: '1.25rem 1rem', borderTopLeftRadius: '12px', borderBottomLeftRadius: '12px', borderLeft: `5px solid ${rec.score >= 80 ? 'var(--green-primary)' : rec.score >= 60 ? 'var(--gold)' : 'var(--red-alert)'}` }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                  <span style={{ fontSize: '1.5rem' }}>{getCropEmoji(rec.crop)}</span>
+                                  <div>
+                                    <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--text-dark)' }}>{t(rec.crop, user?.preferredLanguage)}</div>
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>{idx + 1}. {t('rank', user?.preferredLanguage)}</div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td style={{ padding: '1.25rem 1rem', textAlign: 'center' }}>
+                                <div style={{ 
+                                  display: 'inline-block',
+                                  padding: '4px 12px',
+                                  borderRadius: '20px',
+                                  background: rec.score >= 80 ? '#e8f5ec' : rec.score >= 60 ? '#fef9e7' : '#fdeded',
+                                  color: rec.score >= 80 ? 'var(--green-primary)' : rec.score >= 60 ? 'var(--gold-dark)' : 'var(--red-alert)',
+                                  fontWeight: 800,
+                                  fontSize: '1rem'
+                                }}>
+                                  {rec.score}%
+                                </div>
+                              </td>
+                              <td style={{ padding: '1.25rem 1rem', textAlign: 'right' }}>
+                                <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--green-primary)' }}>
+                                  ₹{rec.expectedProfit.toLocaleString('en-IN')}
+                                </div>
+                                <div style={{ fontSize: '0.7rem', color: 'var(--text-light)' }}>{t('perAcre', user?.preferredLanguage)}</div>
+                              </td>
+                              <td style={{ padding: '1.25rem 1rem', borderTopRightRadius: '12px', borderBottomRightRadius: '12px', textAlign: 'center', color: 'var(--green-primary)' }}>
+                                <i className={`fas fa-chevron-${isExpanded ? 'up' : 'down'}`}></i>
+                              </td>
+                            </tr>
+                            
+                            {/* Breakdown Row */}
+                            {isExpanded && (
+                              <tr>
+                                <td colSpan="4" style={{ padding: '0 0 1rem 0' }}>
+                                  <div style={{ 
+                                    background: '#f9fbf9', 
+                                    borderRadius: '12px', 
+                                    margin: '0 1rem',
+                                    padding: '1.5rem',
+                                    border: '1px solid var(--green-pale)',
+                                    animation: 'slideDown 0.3s ease'
+                                  }}>
+                                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: '1.5rem' }}>
+                                      {rec.season && <span style={tagStyle('green')}><i className="fas fa-calendar-alt me-1"></i>{t(rec.season, user?.preferredLanguage)}</span>}
+                                      {rec.soilType && <span style={tagStyle('earth')}><i className="fas fa-mountain me-1"></i>{t(rec.soilType, user?.preferredLanguage)}</span>}
+                                      {rec.waterRequirement && <span style={tagStyle('sky')}><i className="fas fa-droplet me-1"></i>{t('waterRequirement', user?.preferredLanguage)}: {t(rec.waterRequirement, user?.preferredLanguage)}</span>}
+                                      {rec.growthDays && <span style={tagStyle('gold')}><i className="fas fa-clock me-1"></i>{rec.growthDays} {t('days', user?.preferredLanguage)}</span>}
+                                    </div>
+
+                                    <h6 style={{ fontWeight: 800, marginBottom: '1rem', color: 'var(--text-dark)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                      <i className="fas fa-chart-line" style={{ color: 'var(--green-primary)' }}></i>
+                                      {t('breakdownTitle', user?.preferredLanguage)}
+                                    </h6>
+
+                                    <div style={{ display: 'grid', gap: '0.75rem' }}>
+                                      {rec.scoreBreakdown?.map((b, bi) => (
+                                        <div key={bi} style={{
+                                          background: 'white', borderRadius: '10px',
+                                          border: '1px solid var(--border)', padding: '1rem'
+                                        }}>
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                                            <span style={{ fontSize: '1.2rem' }}>{FACTOR_ICONS[b.factor.split('(')[1]?.replace(')', '')] || FACTOR_ICONS[b.factor] || '📊'}</span>
+                                            <span style={{ fontWeight: 700, fontSize: '0.9rem', flex: 1, color: 'var(--text-dark)' }}>{t(b.factor.split('(')[1]?.replace(')', '') || b.factor, user?.preferredLanguage)}</span>
+                                            <MiniBar scored={b.scored} max={b.maxPoints} />
+                                            <span style={{ fontWeight: 800, fontSize: '0.85rem', minWidth: 50, textAlign: 'right', color: 'var(--text-dark)' }}>{b.scored}/{b.maxPoints}</span>
+                                          </div>
+                                          <div style={{ fontSize: '0.85rem', color: 'var(--text-mid)', paddingLeft: 36, borderLeft: '3px solid var(--green-pale)', marginLeft: 5 }}>{b.reason}</div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan="4" className="text-center py-4" style={{ color: 'var(--text-light)', fontSize: '0.9rem', fontStyle: 'italic' }}>
+                          No suitable crops found for this category.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))}
 
           {/* Legend */}
           <div className="km-card mt-4" style={{ background: 'var(--green-mist)' }}>
@@ -534,11 +566,11 @@ const CropRecommendation = () => {
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               {[
                 { label: 'Season', pts: 15, icon: '📅' },
-                { label: 'Climate', pts: 20, icon: '🌤️' },
-                { label: 'Soil', pts: 15, icon: '🪨' },
+                { label: 'Climate', pts: 25, icon: '🌤️' },
+                { label: 'Soil', pts: 20, icon: '🪨' },
                 { label: 'Irrigation', pts: 15, icon: '💧' },
                 { label: 'Profit', pts: 25, icon: '💰' },
-                { label: 'Growth', pts: 5, icon: '⏱️' },
+                { label: 'Growth', pts: 10, icon: '⏱️' },
                 { label: 'Market', pts: 5, icon: '📈' },
               ].map((f, i) => (
                 <div key={i} style={{
