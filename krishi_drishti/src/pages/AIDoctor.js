@@ -2,10 +2,43 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { chatAPI } from '../services/api';
 
+/* ── localization ── */
+const LOCALES = {
+  en: {
+    breadcrumbHome: 'Home',
+    pageTitle: 'AI Crop Doctor',
+    pageSubtitle: 'Crop Doctor — Smart Chatbot',
+    aiGreeting: 'Hello {name}! I am KrishiDrishti AI Crop Doctor. How can I help you today with your farming?',
+    aiError: 'Sorry, I am facing some technical issues right now. Please try again later.',
+    inputPlaceholder: 'Ask your question... (e.g., My onion leaves are yellow, what to do?)',
+    doctorLabel: 'KrishiDrishti AI',
+  },
+  mr: {
+    breadcrumbHome: 'मुख्यपृष्ठ (Home)',
+    pageTitle: 'AI कृषी डॉक्टर',
+    pageSubtitle: 'कृषी डॉक्टर — स्मार्ट चॅटबॉट',
+    aiGreeting: 'नमस्कार {name}! मी कृषिदृष्टी AI पीक डॉक्टर आहे. आज मी तुम्हाला शेतीमध्ये कशी मदत करू शकतो?',
+    aiError: 'क्षमस्व, मला सध्या काही तांत्रिक अडचणी येत आहेत. कृपया नंतर पुन्हा प्रयत्न करा.',
+    inputPlaceholder: 'तुमचा प्रश्न विचारा... (उदा. माझ्या कांद्याला पिवळी पाने आली, काय करू?)',
+    doctorLabel: 'कृषिदृष्टी AI',
+  }
+};
+
+const t = (key, lang = 'en', params = {}) => {
+  const dictionary = LOCALES[lang] || LOCALES.en;
+  let text = dictionary[key] || key;
+  Object.keys(params).forEach(p => {
+    text = text.replace(`{${p}}`, params[p]);
+  });
+  return text;
+};
+
 export const AIDoctor = () => {
     const { user } = useAuth();
+    const lang = user?.preferredLanguage || 'en';
+    
     const [messages, setMessages] = useState([
-        { role: 'ai', text: `Hello ${user?.name || 'Farmer'}! I am KrishiDrishti AI Crop Doctor. How can I help you today with your farming?` }
+        { role: 'ai', text: t('aiGreeting', lang, { name: user?.fullName?.split(' ')[0] || 'Farmer' }) }
     ]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
@@ -29,18 +62,20 @@ export const AIDoctor = () => {
         setLoading(true);
 
         try {
-            // Create context block with last few messages
-            const history = messages.slice(-5).map(m => `${m.role === 'ai' ? 'Crop Doctor' : 'Farmer'}: ${m.text}`).join('\n');
+            const contextLabel = lang === 'mr' ? 'पीक डॉक्टर' : 'Crop Doctor';
+            const farmerLabel = lang === 'mr' ? 'शेतकरी' : 'Farmer';
+            
+            const history = messages.slice(-5).map(m => `${m.role === 'ai' ? contextLabel : farmerLabel}: ${m.text}`).join('\n');
             const questionWithContext = `Previous conversation context:\n${history}\n\nFarmer's current question: ${input}`;
 
             const res = await chatAPI.ask({
                 question: questionWithContext,
-                language: 'mr' // Hardcoding Marathi preference for now or from user preferences
+                language: lang
             });
 
             setMessages(prev => [...prev, { role: 'ai', text: res.data.answer }]);
         } catch (error) {
-            setMessages(prev => [...prev, { role: 'ai', text: 'Sorry, I am facing some technical issues right now. Please try again later.' }]);
+            setMessages(prev => [...prev, { role: 'ai', text: t('aiError', lang) }]);
         } finally {
             setLoading(false);
         }
@@ -63,9 +98,9 @@ export const AIDoctor = () => {
         <div className="fade-in" id="ai-doctor-page" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 100px)' }}>
             <div className="km-page-header d-flex justify-content-between align-items-start">
                 <div>
-                    <div className="km-breadcrumb">🏠 Home <i className="fas fa-chevron-right" style={{ fontSize: 8 }}></i> <span>AI Crop Doctor</span></div>
-                    <h1><i className="fas fa-robot me-2 icon-spin-in" style={{ color: 'var(--green-primary)' }}></i>AI Crop Doctor</h1>
-                    <p className="marathi">कृषी डॉक्टर — स्मार्ट चॅटबॉट</p>
+                    <div className="km-breadcrumb">🏠 {t('breadcrumbHome', lang)} <i className="fas fa-chevron-right" style={{ fontSize: 8 }}></i> <span>{t('pageTitle', lang)}</span></div>
+                    <h1><i className="fas fa-robot me-2 icon-spin-in" style={{ color: 'var(--green-primary)' }}></i>{t('pageTitle', lang)}</h1>
+                    <p>{t('pageSubtitle', lang)}</p>
                 </div>
             </div>
 
@@ -91,7 +126,7 @@ export const AIDoctor = () => {
                             }}>
                                 {msg.role === 'ai' && (
                                     <div style={{ fontSize: '0.8rem', color: 'var(--green-primary)', fontWeight: 'bold', marginBottom: '0.5rem' }}>
-                                        <i className="fas fa-robot me-1"></i> KrishiDrishti AI
+                                        <i className="fas fa-robot me-1"></i> {t('doctorLabel', lang)}
                                     </div>
                                 )}
                                 <div>{formatText(msg.text)}</div>
@@ -118,7 +153,7 @@ export const AIDoctor = () => {
                             type="text"
                             className="km-input flex-grow-1"
                             style={{ marginBottom: 0, borderRadius: '2rem', padding: '0.75rem 1.5rem' }}
-                            placeholder="तुमचा प्रश्न विचारा... (e.g., माझ्या कांद्याला पिवळी पाने आली, काय करू?)"
+                            placeholder={t('inputPlaceholder', lang)}
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             disabled={loading}

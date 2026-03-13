@@ -3,8 +3,267 @@ import { useDropzone } from 'react-dropzone';
 import { useAuth } from '../context/AuthContext';
 import { pestAPI, weatherAPI, schemeAPI, smsAPI } from '../services/api';
 
+/* ── localization ── */
+const LOCALES = {
+  en: {
+    home: 'Home',
+    pestTitle: 'AI Pest Detection',
+    pestSubtitle: 'Pest Detection by AI — Upload a Photo',
+    uploadTitle: 'Upload Crop Image',
+    uploadSub: 'Choose a photo of your crop',
+    dragActive: 'Drop image here...',
+    dragIdle: 'Drag & drop or click to upload',
+    uploadHint: 'JPG, PNG up to 10MB',
+    cropTypeLabel: 'Crop Type',
+    btnDetecting: 'Analyzing with AI...',
+    btnDetect: 'Detect Pest',
+    resultTitle: 'Detection Result',
+    resultSub: 'Pest identification results',
+    pestLabel: 'Detected Pest',
+    confidence: 'Confidence',
+    treatmentTitle: 'Treatment',
+    historyTitle: 'Detection History',
+    historySub: 'Recent pest reports',
+    colCrop: 'Crop',
+    colPest: 'Pest',
+    colConfidence: 'Confidence',
+    colLocation: 'Location',
+    colDate: 'Date',
+    emptyTitle: 'AI Analysis Ready',
+    emptySub: 'Upload a crop image and click detect',
+    errorUpload: 'Please upload a crop image first.',
+    errorDetect: 'Detection failed. Try again.',
+    districtAlert: 'District Alert',
+    
+    // Other Pages (Weather)
+    weatherTitle: 'Weather-Based Pest Prediction',
+    weatherSubtitle: 'Weather-Based Pest Forecasting',
+    locationCropTitle: 'Select Location & Crop',
+    locationCropSub: 'Select district and crop',
+    labelDistrict: 'District',
+    labelState: 'State',
+    labelCrop: 'Crop Type',
+    btnPredicting: 'Analyzing...',
+    btnPredict: 'Predict Pests',
+    humidity: 'Humidity',
+    rainfall: 'Rainfall',
+    wind: 'Wind',
+    riskLevel: 'Risk Level',
+    advisory: 'Advisory',
+    predictedRisks: 'Predicted Pest Risks',
+    predictedRisksSub: 'Potential pest threats',
+    why: 'Why',
+    prevention: 'Prevention',
+    sprayTime: 'Best spray time',
+
+    // Schemes
+    schemesTitle: 'Government Schemes',
+    schemesSubtitle: 'Government Schemes — View eligible schemes for you',
+    btnAllSchemes: 'All Schemes',
+    btnRecSchemes: 'AI Recommendations',
+    loadingSchemes: 'Loading schemes...',
+    aiFinding: 'AI is searching for schemes...',
+    recommended: 'Recommended',
+    active: 'Active',
+    aiRecLabel: 'AI Recommendation',
+    maxIncome: 'Max Income',
+    maxLand: 'Max Land',
+    acres: 'acres',
+    benefits: 'Benefits',
+    applyOnline: 'Apply Online',
+    noSchemes: 'No schemes found. Add schemes to database.',
+    noRecs: 'No AI recommendations available right now.',
+
+    // SMS Alerts
+    alertsTitle: 'My Alert Inbox',
+    alertsSubtitle: 'My Alerts — Notification received from KrishiDrishti',
+    smsActive: 'Automatic SMS Alerts Active',
+    smsActiveSub: 'KrishiDrishti sends automatic SMS for pest, weather, and price changes',
+    registered: 'Registered',
+    totalAlerts: 'Total Alerts',
+    pestAlerts: 'Pest Alerts',
+    weatherAlerts: 'Weather Alerts',
+    priceAlerts: 'Price Alerts',
+    receivedAlerts: 'Received Alerts',
+    receivedAlertsSub: 'Information received',
+    noAlerts: 'No alerts yet',
+    willReceive: 'You will receive SMS alerts automatically when:',
+    triggerPest: 'A pest outbreak is detected in your district',
+    triggerWeather: 'Extreme weather is forecasted',
+    triggerPrice: 'Your crop price changes significantly',
+    triggerScheme: 'A new government scheme is available',
+    autoSmsNote: 'Alerts will come automatically — no action needed',
+    alertSettings: 'Alert Settings',
+    alertSettingsSub: 'Choose which alerts you want to receive on your phone',
+    alertInstruction: 'Choose which alerts you want to receive on your phone',
+    sentTo: 'Alerts sent to',
+    phoneHint: 'Update phone number in profile',
+    howItWorks: 'How It Works',
+    howItWorksSub: 'How the alert system works',
+    step1: 'System monitors weather & pests daily',
+    step2: 'Risk detected in your district',
+    step3: 'Automatic SMS sent to your phone',
+    step4: 'Take action before damage occurs',
+    
+    // Profile
+    profileTitle: 'My Profile',
+    profileSubtitle: 'My Information',
+    primaryCrop: 'Primary Crop',
+    farmerDetails: 'Farmer Details',
+    farmerDetailsSub: 'Farmer Information',
+    fullName: 'Full Name',
+    email: 'Email',
+    phone: 'Phone',
+    state: 'State',
+    district: 'District',
+    village: 'Village',
+    landSize: 'Land Size',
+    annualIncome: 'Annual Income',
+    category: 'Category',
+    language: 'Language',
+    notSet: 'Not set',
+    
+    // Crops & States
+    'Wheat': 'Wheat', 'Rice': 'Rice', 'Onion': 'Onion', 'Tomato': 'Tomato', 'Cotton': 'Cotton',
+    'Soybean': 'Soybean', 'Potato': 'Potato', 'Maize': 'Maize', 'Sugarcane': 'Sugarcane',
+    'Maharashtra': 'Maharashtra', 'Rajasthan': 'Rajasthan', 'Punjab': 'Punjab',
+    'Karnataka': 'Karnataka', 'Madhya Pradesh': 'Madhya Pradesh', 'Uttar Pradesh': 'Uttar Pradesh', 'Gujarat': 'Gujarat'
+  },
+  mr: {
+    home: 'मुख्यपृष्ठ (Home)',
+    pestTitle: 'AI कीड ओळख',
+    pestSubtitle: 'AI द्वारे कीड ओळख — फोटो अपलोड करा',
+    uploadTitle: 'पिकाचा फोटो अपलोड करा',
+    uploadSub: 'तुमच्या पिकाचा फोटो निवडा',
+    dragActive: 'येथे फोटो ड्रॅग करा...',
+    dragIdle: 'फोटो ड्रॅग करा किंवा क्लिक करा',
+    uploadHint: 'JPG, PNG १०MB पर्यंत',
+    cropTypeLabel: 'पिकाचा प्रकार',
+    btnDetecting: 'AI तपासणी करत आहे...',
+    btnDetect: 'कीड ओळखा',
+    resultTitle: 'तपासणीचा निकाल',
+    resultSub: 'कीड ओळखीचा निकाल',
+    pestLabel: 'आढळलेली कीड',
+    confidence: 'खात्री (Confidence)',
+    treatmentTitle: 'उपाय/उपचार',
+    historyTitle: 'तपासणी इतिहास',
+    historySub: 'मागील कीड अहवाल',
+    colCrop: 'पीक',
+    colPest: 'कीड',
+    colConfidence: 'खात्री',
+    colLocation: 'ठिकाण',
+    colDate: 'तारीख',
+    emptyTitle: 'AI तपासणीसाठी तयार',
+    emptySub: 'पिकाचा फोटो अपलोड करा आणि कीड ओळखा',
+    errorUpload: 'कृपया प्रथम पिकाचा फोटो अपलोड करा.',
+    errorDetect: 'तपासणी अयशस्वी. पुन्हा प्रयत्न करा.',
+    districtAlert: 'जिल्हा धोक्याची सूचना',
+    
+    // Other Pages (Weather)
+    weatherTitle: 'हवामानावर आधारित कीड अंदाज',
+    weatherSubtitle: 'हवामानावर आधारित कीड अंदाज',
+    locationCropTitle: 'जिल्हा व पीक निवडा',
+    locationCropSub: 'जिल्हा आणि पीक निवडा',
+    labelDistrict: 'जिल्हा',
+    labelState: 'राज्य',
+    labelCrop: 'पीक',
+    btnPredicting: 'अंदाज घेत आहोत...',
+    btnPredict: 'अंदाज मिळवा',
+    humidity: 'आर्द्रता',
+    rainfall: 'पाऊस',
+    wind: 'वारा',
+    riskLevel: 'धोका पातळी',
+    advisory: 'सल्ला',
+    predictedRisks: 'संभाव्य कीड धोके',
+    predictedRisksSub: 'किडीचा धोका',
+    why: 'कारण',
+    prevention: 'प्रतिबंधक उपाय',
+    sprayTime: 'फवारणीची योग्य वेळ',
+
+    // Schemes
+    schemesTitle: 'सरकारी योजना',
+    schemesSubtitle: 'सरकारी योजना — आपल्यासाठी पात्र योजना पहा',
+    btnAllSchemes: 'सर्व योजना',
+    btnRecSchemes: 'AI शिफारसी',
+    loadingSchemes: 'योजना लोड होत आहेत...',
+    aiFinding: 'AI तुमच्यासाठी योग्य योजना शोधत आहे...',
+    recommended: 'शिफारस केलेले',
+    active: 'सक्रिय',
+    aiRecLabel: 'AI शिफारस',
+    maxIncome: 'कमाल उत्पन्न',
+    maxLand: 'कमाल जमीन',
+    acres: 'एकर',
+    benefits: 'फायदे',
+    applyOnline: 'ऑनलाईन अर्ज करा',
+    noSchemes: 'कोणतीही योजना आढळली नाही.',
+    noRecs: 'सध्या कोणतीही AI शिफारस उपलब्ध नाही.',
+
+    // SMS Alerts
+    alertsTitle: 'माझ्या सूचना',
+    alertsSubtitle: 'माझ्या सूचना — कृषिदृष्टी कडून मिळालेल्या सूचना',
+    smsActive: 'स्वयंचलित SMS सूचना सक्रिय',
+    smsActiveSub: 'कृषिदृष्टी कीड, हवामान आणि भाव बदलासाठी आपोआप SMS पाठवते',
+    registered: 'नोंदणीकृत',
+    totalAlerts: 'एकूण सूचना',
+    pestAlerts: 'कीड सूचना',
+    weatherAlerts: 'हवामान सूचना',
+    priceAlerts: 'भाव सूचना',
+    receivedAlerts: 'मिळालेल्या सूचना',
+    receivedAlertsSub: 'प्राप्त माहिती',
+    noAlerts: 'अद्याप कोणतीही सूचना नाही',
+    willReceive: 'तुम्हाला आपोआप SMS सूचना मिळतील जेव्हा:',
+    triggerPest: 'तुमच्या जिल्ह्यात कीड प्रादुर्भाव आढळल्यास',
+    triggerWeather: 'हवामान बदलण्याची सूचना असल्यास',
+    triggerPrice: 'तुमच्या पिकाच्या भावात मोठा बदल झाल्यास',
+    triggerScheme: 'नवीन सरकारी योजना उपलब्ध असल्यास',
+    autoSmsNote: 'सूचना आपोआप येतील — काहीही करण्याची गरज नाही',
+    alertSettings: 'सूचना सेटिंग्ज',
+    alertSettingsSub: 'कोणत्या सूचना मिळवायच्या ते निवडा',
+    alertInstruction: 'तुमच्या फोनवर कोणत्या सूचना मिळवायच्या ते निवडा',
+    sentTo: 'येथे सूचना पाठवल्या जातील',
+    phoneHint: 'प्रोफाइलमध्ये फोन नंबर अपडेट करा',
+    howItWorks: 'हे कसे कार्य करते',
+    howItWorksSub: 'सूचना प्रणाली कशी कार्य करते',
+    step1: 'प्रणाली दररोज हवामान आणि किडींवर लक्ष ठेवते',
+    step2: 'तुमच्या जिल्ह्यात धोका आढळल्यास',
+    step3: 'तुमच्या फोनवर स्वयंचलित SMS पाठवला जातो',
+    step4: 'नुकसान होण्यापूर्वी वेळेवर उपाय करा',
+    
+    // Profile
+    profileTitle: 'माझी प्रोफाइल',
+    profileSubtitle: 'माझी माहिती',
+    primaryCrop: 'मुख्य पीक',
+    farmerDetails: 'शेतकरी माहिती',
+    farmerDetailsSub: 'शेतकऱ्याचा तपशील',
+    fullName: 'पूर्ण नाव',
+    email: 'ईमेल',
+    phone: 'फोन',
+    state: 'राज्य',
+    district: 'जिल्हा',
+    village: 'गाव',
+    landSize: 'जमीन क्षेत्र',
+    annualIncome: 'वार्षिक उत्पन्न',
+    category: 'प्रवर्ग',
+    language: 'भाषा',
+    notSet: 'नोंदणी नाही',
+
+    // Crops & States
+    'Wheat': 'गहू (Wheat)', 'Rice': 'भात (Rice)', 'Onion': 'कांदा (Onion)', 'Tomato': 'टोमॅटो (Tomato)', 'Cotton': 'कापूस (Cotton)',
+    'Soybean': 'सोयाबीन (Soybean)', 'Potato': 'बटाटा (Potato)', 'Maize': 'मका (Maize)', 'Sugarcane': 'ऊस (Sugarcane)',
+    'Maharashtra': 'महाराष्ट्र', 'Rajasthan': 'राजस्थान', 'Punjab': 'पंजाब',
+    'Karnataka': 'कर्नाटक', 'Madhya Pradesh': 'मध्य प्रदेश', 'Uttar Pradesh': 'उत्तर प्रदेश', 'Gujarat': 'गुजरात'
+  }
+};
+
+const t = (key, lang = 'en') => {
+  const dictionary = LOCALES[lang] || LOCALES.en;
+  return dictionary[key] || key;
+};
+
 // ===== PEST DETECTION PAGE =====
 export const PestDetection = () => {
+  const { user } = useAuth();
+  const lang = user?.preferredLanguage || 'en';
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState('');
   const [cropType, setCropType] = useState('Wheat');
@@ -30,7 +289,7 @@ export const PestDetection = () => {
   });
 
   const handleDetect = async () => {
-    if (!file) { setError('Please upload a crop image first.'); return; }
+    if (!file) { setError(t('errorUpload', lang)); return; }
     setLoading(true); setError(''); setResult(null);
     const fd = new FormData();
     fd.append('image', file);
@@ -40,7 +299,7 @@ export const PestDetection = () => {
       setResult(res.data);
       pestAPI.getHistory().then(r => setHistory(r.data || [])).catch(() => { });
     } catch (err) {
-      setError(err.response?.data?.error || 'Detection failed. Try again.');
+      setError(err.response?.data?.error || t('errorDetect', lang));
     } finally { setLoading(false); }
   };
 
@@ -50,9 +309,9 @@ export const PestDetection = () => {
     <div className="fade-in" id="pest-detection-page">
       <div className="km-page-header d-flex justify-content-between align-items-start">
         <div>
-          <div className="km-breadcrumb">🏠 Home <i className="fas fa-chevron-right" style={{ fontSize: 8 }}></i> <span>Pest Detection</span></div>
-          <h1><i className="fas fa-bug me-2 icon-spin-in" style={{ color: 'var(--red-alert)' }}></i>AI Pest Detection</h1>
-          <p className="marathi">AI द्वारे कीड ओळख — फोटो अपलोड करा</p>
+          <div className="km-breadcrumb">🏠 {t('home', lang)} <i className="fas fa-chevron-right" style={{ fontSize: 8 }}></i> <span>{t('pestTitle', lang)}</span></div>
+          <h1><i className="fas fa-bug me-2 icon-spin-in" style={{ color: 'var(--red-alert)' }}></i>{t('pestTitle', lang)}</h1>
+          <p>{t('pestSubtitle', lang)}</p>
         </div>
       </div>
 
@@ -62,8 +321,8 @@ export const PestDetection = () => {
             <div className="km-card-header">
               <div className="km-card-icon red"><i className="fas fa-camera"></i></div>
               <div>
-                <h5 style={{ margin: 0 }}>Upload Crop Image</h5>
-                <small className="marathi" style={{ color: 'var(--text-light)' }}>पिकाचा फोटो अपलोड करा</small>
+                <h5 style={{ margin: 0 }}>{t('uploadTitle', lang)}</h5>
+                <small style={{ color: 'var(--text-light)' }}>{t('uploadSub', lang)}</small>
               </div>
             </div>
             <div {...getRootProps()} className={`km-upload-zone ${isDragActive ? 'active' : ''} mb-3`}>
@@ -76,22 +335,21 @@ export const PestDetection = () => {
               ) : (
                 <>
                   <div className="upload-icon">📷</div>
-                  <p style={{ fontWeight: 600, marginBottom: 4 }}>{isDragActive ? 'Drop image here...' : 'Drag & drop or click to upload'}</p>
-                  <p className="marathi" style={{ color: 'var(--text-light)', fontSize: '0.82rem' }}>फोटो ड्रॅग करा किंवा क्लिक करा</p>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--text-light)', marginTop: 8 }}>JPG, PNG up to 10MB</p>
+                  <p style={{ fontWeight: 600, marginBottom: 4 }}>{isDragActive ? t('dragActive', lang) : t('dragIdle', lang)}</p>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-light)', marginTop: 8 }}>{t('uploadHint', lang)}</p>
                 </>
               )}
             </div>
             <div className="mb-3">
-              <label className="km-label">Crop Type / पीकाचा प्रकार</label>
+              <label className="km-label">{t('cropTypeLabel', lang)}</label>
               <select className="km-input" value={cropType} onChange={e => setCropType(e.target.value)}>
-                {CROPS.map(c => <option key={c}>{c}</option>)}
+                {CROPS.map(c => <option key={c} value={c}>{t(c, lang)}</option>)}
               </select>
             </div>
             {error && <div className="km-alert error mb-3"><i className="fas fa-exclamation-circle me-2"></i>{error}</div>}
             <button className="btn-km-primary w-100 justify-content-center" onClick={handleDetect} disabled={loading || !file}>
-              {loading ? <><span className="spinner-border spinner-border-sm me-2"></span>Analyzing with AI...</>
-                : <><i className="fas fa-microscope"></i>Detect Pest / कीड ओळखा</>}
+              {loading ? <><span className="spinner-border spinner-border-sm me-2"></span>{t('btnDetecting', lang)}</>
+                : <><i className="fas fa-microscope"></i>{t('btnDetect', lang)}</>}
             </button>
           </div>
         </div>
@@ -102,24 +360,24 @@ export const PestDetection = () => {
               <div className="km-card-header">
                 <div className="km-card-icon red"><i className="fas fa-flask"></i></div>
                 <div>
-                  <h5 style={{ margin: 0 }}>Detection Result</h5>
-                  <small className="marathi" style={{ color: 'var(--text-light)' }}>कीड ओळखीचा निकाल</small>
+                  <h5 style={{ margin: 0 }}>{t('resultTitle', lang)}</h5>
+                  <small style={{ color: 'var(--text-light)' }}>{t('resultSub', lang)}</small>
                 </div>
               </div>
               <div style={{ background: 'var(--green-mist)', borderRadius: 'var(--radius-sm)', padding: '1.25rem', marginBottom: '1rem' }}>
-                <div style={{ fontSize: '0.78rem', color: 'var(--text-light)', fontWeight: 600, textTransform: 'uppercase' }}>Detected Pest</div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-light)', fontWeight: 600, textTransform: 'uppercase' }}>{t('pestLabel', lang)}</div>
                 <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--red-alert)', marginTop: 4 }}>{result.pestName}</div>
                 <span style={{ background: 'var(--green-pale)', color: 'var(--green-primary)', padding: '4px 12px', borderRadius: 20, fontSize: '0.8rem', fontWeight: 700 }}>
-                  {result.confidencePercent?.toFixed(1)}% Confidence
+                  {result.confidencePercent?.toFixed(1)}% {t('confidence', lang)}
                 </span>
               </div>
               {result.districtAlert && (
                 <div className="km-alert warning mb-3">
-                  <i className="fas fa-exclamation-triangle me-2"></i><strong>District Alert:</strong> {result.districtAlert}
+                  <i className="fas fa-exclamation-triangle me-2"></i><strong>{t('districtAlert', lang)}:</strong> {result.districtAlert}
                 </div>
               )}
               <div style={{ fontWeight: 700, marginBottom: 8, fontSize: '0.875rem' }}>
-                <i className="fas fa-prescription-bottle-medical me-2" style={{ color: 'var(--green-primary)' }}></i>Treatment / उपाय
+                <i className="fas fa-prescription-bottle-medical me-2" style={{ color: 'var(--green-primary)' }}></i>{t('treatmentTitle', lang)}
               </div>
               <p style={{ fontSize: '0.875rem', color: 'var(--text-mid)', background: 'var(--green-mist)', padding: '1rem', borderRadius: 'var(--radius-sm)', lineHeight: 1.7 }}>
                 {result.treatmentRecommendation}
@@ -129,9 +387,8 @@ export const PestDetection = () => {
             <div className="km-card" style={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <div className="km-empty-state">
                 <div className="empty-icon">🔬</div>
-                <h5>AI Analysis Ready</h5>
-                <p>Upload a crop image and click detect</p>
-                <p className="marathi" style={{ fontSize: '0.82rem', color: 'var(--text-light)' }}>फोटो अपलोड करून कीड ओळखा</p>
+                <h5>{t('emptyTitle', lang)}</h5>
+                <p>{t('emptySub', lang)}</p>
               </div>
             </div>
           )}
@@ -142,20 +399,20 @@ export const PestDetection = () => {
         <div className="km-card mt-4">
           <div className="km-card-header">
             <div className="km-card-icon earth"><i className="fas fa-history"></i></div>
-            <div><h5 style={{ margin: 0 }}>Detection History</h5>
-              <small className="marathi" style={{ color: 'var(--text-light)' }}>मागील कीड अहवाल</small></div>
+            <div><h5 style={{ margin: 0 }}>{t('historyTitle', lang)}</h5>
+              <small style={{ color: 'var(--text-light)' }}>{t('historySub', lang)}</small></div>
           </div>
           <div className="table-responsive">
             <table className="km-table">
-              <thead><tr><th>Crop</th><th>Pest</th><th>Confidence</th><th>Location</th><th>Date</th></tr></thead>
+              <thead><tr><th>{t('colCrop', lang)}</th><th>{t('colPest', lang)}</th><th>{t('colConfidence', lang)}</th><th>{t('colLocation', lang)}</th><th>{t('colDate', lang)}</th></tr></thead>
               <tbody>
                 {history.slice(0, 10).map(h => (
                   <tr key={h.id}>
-                    <td><span style={{ background: 'var(--green-pale)', color: 'var(--green-primary)', padding: '3px 10px', borderRadius: 20, fontSize: '0.8rem', fontWeight: 600 }}>{h.cropType}</span></td>
+                    <td><span style={{ background: 'var(--green-pale)', color: 'var(--green-primary)', padding: '3px 10px', borderRadius: 20, fontSize: '0.8rem', fontWeight: 600 }}>{t(h.cropType, lang)}</span></td>
                     <td style={{ fontWeight: 600, color: 'var(--red-alert)' }}>{h.pestName}</td>
                     <td style={{ color: 'var(--green-primary)', fontWeight: 700 }}>{h.confidencePercent?.toFixed(1)}%</td>
-                    <td style={{ color: 'var(--text-light)' }}>{h.district}, {h.state}</td>
-                    <td style={{ color: 'var(--text-light)', fontSize: '0.82rem' }}>{new Date(h.reportedAt).toLocaleDateString('en-IN')}</td>
+                    <td style={{ color: 'var(--text-light)' }}>{h.district}, {t(h.state, lang)}</td>
+                    <td style={{ color: 'var(--text-light)', fontSize: '0.82rem' }}>{new Date(h.reportedAt).toLocaleDateString(lang === 'mr' ? 'mr-IN' : 'en-IN')}</td>
                   </tr>
                 ))}
               </tbody>

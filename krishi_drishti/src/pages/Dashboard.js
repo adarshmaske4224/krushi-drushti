@@ -3,14 +3,76 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { pestAPI, priceAPI, weatherAPI } from '../services/api';
 
+/* ── localization ── */
+const LOCALES = {
+  en: {
+    morning: 'Good Morning',
+    afternoon: 'Good Afternoon',
+    evening: 'Good Evening',
+    welcomeSub: 'View today\'s updates for your farm',
+    acres: 'Acres',
+    pestReports: 'Pest Reports',
+    landSize: 'Land Size',
+    category: 'Category',
+    income: 'Income',
+    totalSeason: 'Total this season',
+    farmerCategory: 'Farmer category',
+    annualIncome: 'Annual income',
+    quickActions: 'Quick Actions',
+    quickActionsSub: 'Fast and easy',
+    farmingTips: 'Farming Tips Today',
+    farmingTipsSub: 'Smart advice for today',
+    checkPrices: 'Check Prices',
+    detectPest: 'Detect Pest',
+    weatherAlert: 'Weather Alert',
+    viewSchemes: 'View Schemes',
+    tip1: 'Water crops early morning to reduce evaporation loss.',
+    tip2: 'Check leaves for yellowing — early sign of nutrient deficiency.',
+    tip3: 'High humidity this week — watch for fungal disease spread.',
+  },
+  mr: {
+    morning: 'शुभ प्रभात',
+    afternoon: 'शुभ दुपार',
+    evening: 'शुभ संध्याकाळ',
+    welcomeSub: 'आपल्या शेतासाठी आजचे अपडेट्स पहा',
+    acres: 'एकर',
+    pestReports: 'कीड अहवाल',
+    landSize: 'जमीन क्षेत्र',
+    category: 'प्रवर्ग',
+    income: 'उत्पन्न',
+    totalSeason: 'या हंगामातील एकूण',
+    farmerCategory: 'शेतकरी प्रवर्ग',
+    annualIncome: 'वार्षिक उत्पन्न',
+    quickActions: 'जलद कृती',
+    quickActionsSub: 'सोप्या आणि जलद सुविधा',
+    farmingTips: 'आजच्या शेती टिप्स',
+    farmingTipsSub: 'आजचा स्मार्ट सल्ला',
+    checkPrices: 'भाव तपासा',
+    detectPest: 'कीड ओळखा',
+    weatherAlert: 'हवामान',
+    viewSchemes: 'योजना पहा',
+    tip1: 'पहाटे पाणी द्या — बाष्पीभवन कमी होते.',
+    tip2: 'पानांवर पिवळेपणा — पोषण कमतरतेचे लक्षण.',
+    tip3: 'जास्त आर्द्रता — बुरशीजन्य रोगांकडे लक्ष द्या.',
+  }
+};
+
+const t = (key, lang = 'en') => {
+  const dictionary = LOCALES[lang] || LOCALES.en;
+  return dictionary[key] || key;
+};
+
 const Dashboard = () => {
   const { user } = useAuth();
+  const lang = user?.preferredLanguage || 'en';
   const [pestCount, setPestCount] = useState(0);
   const [price, setPrice] = useState(null);
   const [weather, setWeather] = useState(null);
   const [loading, setLoading] = useState(true);
-  const greeting = new Date().getHours() < 12 ? 'Good Morning' : new Date().getHours() < 17 ? 'Good Afternoon' : 'Good Evening';
-  const greetMr = new Date().getHours() < 12 ? 'शुभ प्रभात' : new Date().getHours() < 17 ? 'शुभ दुपार' : 'शुभ संध्याकाळ';
+
+  const hours = new Date().getHours();
+  const greetingKey = hours < 12 ? 'morning' : hours < 17 ? 'afternoon' : 'evening';
+  const greeting = t(greetingKey, lang);
 
   useEffect(() => {
     const load = async () => {
@@ -32,10 +94,10 @@ const Dashboard = () => {
   }, [user]);
 
   const quickLinks = [
-    { to: '/prices', icon: 'fa-indian-rupee-sign', label: 'Check Prices', labelMr: 'भाव तपासा', color: 'gold' },
-    { to: '/pest', icon: 'fa-bug', label: 'Detect Pest', labelMr: 'कीड ओळखा', color: 'red' },
-    { to: '/weather', icon: 'fa-cloud-sun-rain', label: 'Weather Alert', labelMr: 'हवामान', color: 'sky' },
-    { to: '/schemes', icon: 'fa-file-invoice', label: 'View Schemes', labelMr: 'योजना पहा', color: 'green' },
+    { to: '/prices', icon: 'fa-indian-rupee-sign', label: t('checkPrices', lang), color: 'gold' },
+    { to: '/pest', icon: 'fa-bug', label: t('detectPest', lang), color: 'red' },
+    { to: '/weather', icon: 'fa-cloud-sun-rain', label: t('weatherAlert', lang), color: 'sky' },
+    { to: '/schemes', icon: 'fa-file-invoice', label: t('viewSchemes', lang), color: 'green' },
   ];
 
   return (
@@ -48,12 +110,12 @@ const Dashboard = () => {
       }}>
         <div style={{ position: 'absolute', right: '-20px', top: '-20px', fontSize: '8rem', opacity: 0.07 }}>🌾</div>
         <div style={{ position: 'absolute', right: '120px', bottom: '-30px', fontSize: '6rem', opacity: 0.05 }}>🚜</div>
-        <p style={{ fontSize: '0.85rem', opacity: 0.7, marginBottom: '4px' }}>{greeting} • {greetMr}</p>
+        <p style={{ fontSize: '0.85rem', opacity: 0.7, marginBottom: '4px' }}>{greeting}</p>
         <h1 style={{ color: 'white', fontSize: '2rem', fontWeight: 800, marginBottom: '8px' }}>
           {user?.fullName?.split(' ')[0] || 'Farmer'} <span style={{ opacity: 0.6 }}>👋</span>
         </h1>
-        <p className="marathi" style={{ opacity: 0.8, marginBottom: '1.25rem', fontSize: '0.95rem' }}>
-          आपल्या शेतासाठी आजचे अपडेट्स पहा
+        <p style={{ opacity: 0.8, marginBottom: '1.25rem', fontSize: '0.95rem' }}>
+          {t('welcomeSub', lang)}
         </p>
         <div className="d-flex gap-2 flex-wrap mt-3">
           <span style={{
@@ -81,7 +143,7 @@ const Dashboard = () => {
             fontSize: '0.85rem',
             lineHeight: '1.2'
           }}>
-            <i className="fas fa-ruler-combined me-2"></i>{user?.landSizeAcres} Acres
+            <i className="fas fa-ruler-combined me-2"></i>{user?.landSizeAcres} {t('acres', lang)}
           </span>
         </div>
       </div>
@@ -89,14 +151,14 @@ const Dashboard = () => {
       {/* Stats */}
       <div className="km-stats-grid">
         {[
-          { label: 'Pest Reports', labelMr: 'कीड अहवाल', value: loading ? '...' : pestCount, icon: 'fa-bug', color: 'red', sub: 'Total this season' },
-          { label: 'Land Size', labelMr: 'जमीन क्षेत्र', value: `${user?.landSizeAcres || 0}`, icon: 'fa-ruler-combined', color: 'green', sub: 'Acres' },
-          { label: 'Category', labelMr: 'प्रवर्ग', value: user?.category || 'GEN', icon: 'fa-id-card', color: 'gold', sub: 'Farmer category' },
-          { label: 'Income', labelMr: 'उत्पन्न', value: `₹${((user?.annualIncome || 0) / 1000).toFixed(0)}K`, icon: 'fa-coins', color: 'sky', sub: 'Annual income' },
+          { label: t('pestReports', lang), value: loading ? '...' : pestCount, icon: 'fa-bug', color: 'red', sub: t('totalSeason', lang) },
+          { label: t('landSize', lang), value: `${user?.landSizeAcres || 0}`, icon: 'fa-ruler-combined', color: 'green', sub: t('acres', lang) },
+          { label: t('category', lang), value: user?.category || 'GEN', icon: 'fa-id-card', color: 'gold', sub: t('farmerCategory', lang) },
+          { label: t('income', lang), value: `₹${((user?.annualIncome || 0) / 1000).toFixed(0)}K`, icon: 'fa-coins', color: 'sky', sub: t('annualIncome', lang) },
         ].map((s, i) => (
           <div className="stagger-enter" key={i}>
             <div className={`km-stat-card ${s.color}`}>
-              <div className="stat-label">{s.label} <span className="marathi" style={{ fontSize: '0.7rem' }}>/ {s.labelMr}</span></div>
+              <div className="stat-label">{s.label}</div>
               <div className={`stat-value mt-1`} style={{ color: `var(--${s.color === 'red' ? 'red-alert' : s.color === 'gold' ? 'gold' : s.color === 'sky' ? 'sky' : 'green-primary'})` }}>{s.value}</div>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-light)', marginTop: '4px' }}>{s.sub}</div>
               <i className={`fas ${s.icon} stat-icon`}></i>
@@ -110,8 +172,8 @@ const Dashboard = () => {
         <div className="km-card-header">
           <div className="km-card-icon green"><i className="fas fa-bolt"></i></div>
           <div>
-            <h5 style={{ margin: 0, fontWeight: 700 }}>Quick Actions</h5>
-            <small className="marathi" style={{ color: 'var(--text-light)' }}>जलद कृती</small>
+            <h5 style={{ margin: 0, fontWeight: 700 }}>{t('quickActions', lang)}</h5>
+            <small style={{ color: 'var(--text-light)' }}>{t('quickActionsSub', lang)}</small>
           </div>
         </div>
         <div className="km-quick-grid">
@@ -123,7 +185,6 @@ const Dashboard = () => {
                     <i className={`fas ${q.icon}`}></i>
                   </div>
                   <div style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-dark)' }}>{q.label}</div>
-                  <div className="marathi" style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>{q.labelMr}</div>
                 </div>
               </Link>
             </div>
@@ -136,21 +197,20 @@ const Dashboard = () => {
         <div className="km-card-header">
           <div className="km-card-icon gold"><i className="fas fa-lightbulb"></i></div>
           <div>
-            <h5 style={{ margin: 0, fontWeight: 700 }}>Farming Tips Today</h5>
-            <small className="marathi" style={{ color: 'var(--text-light)' }}>आजच्या शेती टिप्स</small>
+            <h5 style={{ margin: 0, fontWeight: 700 }}>{t('farmingTips', lang)}</h5>
+            <small style={{ color: 'var(--text-light)' }}>{t('farmingTipsSub', lang)}</small>
           </div>
         </div>
         <div className="row g-3">
           {[
-            { icon: '💧', tip: 'Water crops early morning to reduce evaporation loss.', mr: 'पहाटे पाणी द्या — बाष्पीभवन कमी होते.' },
-            { icon: '🌿', tip: 'Check leaves for yellowing — early sign of nutrient deficiency.', mr: 'पानांवर पिवळेपणा — पोषण कमतरतेचे लक्षण.' },
-            { icon: '🌡️', tip: 'High humidity this week — watch for fungal disease spread.', mr: 'जास्त आर्द्रता — बुरशीजन्य रोगांकडे लक्ष द्या.' },
+            { icon: '💧', tip: t('tip1', lang) },
+            { icon: '🌿', tip: t('tip2', lang) },
+            { icon: '🌡️', tip: t('tip3', lang) },
           ].map((t, i) => (
             <div className="col-md-4" key={i}>
               <div style={{ background: 'var(--green-mist)', borderRadius: 'var(--radius-sm)', padding: '1rem', border: '1px solid var(--border)' }}>
                 <div style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>{t.icon}</div>
-                <p style={{ fontSize: '0.84rem', marginBottom: '0.25rem', fontWeight: 500 }}>{t.tip}</p>
-                <p className="marathi" style={{ fontSize: '0.78rem', color: 'var(--text-light)', margin: 0 }}>{t.mr}</p>
+                <p style={{ fontSize: '0.84rem', margin: 0, fontWeight: 500 }}>{t.tip}</p>
               </div>
             </div>
           ))}

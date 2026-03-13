@@ -70,7 +70,7 @@ const Navbar = ({ onToggleSidebar }) => {
           </button>
           <span className="navbar-brand">
             <span className="logo-icon">🌾</span>
-            KrishiDrishti
+            KrushiDrushti
             <small className="marathi ms-2" style={{ fontSize: '0.9rem', opacity: 0.7, fontWeight: 400 }}>कृषी दृष्टी</small>
           </span>
         </div>
