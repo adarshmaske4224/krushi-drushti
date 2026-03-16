@@ -26,6 +26,7 @@ const LOCALES = {
     detectPest: 'Detect Pest',
     weatherAlert: 'Weather Alert',
     viewSchemes: 'View Schemes',
+    cropRecommend: 'Crop Recommend',
     tip1: 'Water crops early morning to reduce evaporation loss.',
     tip2: 'Check leaves for yellowing — early sign of nutrient deficiency.',
     tip3: 'High humidity this week — watch for fungal disease spread.',
@@ -51,6 +52,7 @@ const LOCALES = {
     detectPest: 'कीड ओळखा',
     weatherAlert: 'हवामान',
     viewSchemes: 'योजना पहा',
+    cropRecommend: 'पीक शिफारस',
     tip1: 'पहाटे पाणी द्या — बाष्पीभवन कमी होते.',
     tip2: 'पानांवर पिवळेपणा — पोषण कमतरतेचे लक्षण.',
     tip3: 'जास्त आर्द्रता — बुरशीजन्य रोगांकडे लक्ष द्या.',
@@ -94,6 +96,7 @@ const Dashboard = () => {
   }, [user]);
 
   const quickLinks = [
+    { to: '/crop-recommend', icon: 'fa-seedling', label: t('cropRecommend', lang), color: 'green' },
     { to: '/prices', icon: 'fa-indian-rupee-sign', label: t('checkPrices', lang), color: 'gold' },
     { to: '/pest', icon: 'fa-bug', label: t('detectPest', lang), color: 'red' },
     { to: '/weather', icon: 'fa-cloud-sun-rain', label: t('weatherAlert', lang), color: 'sky' },
