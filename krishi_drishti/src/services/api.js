@@ -1,13 +1,19 @@
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:8080';
+const BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080';
 
 const api = axios.create({ baseURL: BASE_URL });
 
 // Attach JWT token to every request
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('km_token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  if (token) {
+    if (typeof config.headers.set === 'function') {
+      config.headers.set('Authorization', `Bearer ${token}`);
+    } else {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
   return config;
 });
 
@@ -15,7 +21,7 @@ api.interceptors.request.use(config => {
 api.interceptors.response.use(
   res => res,
   err => {
-    if (err.response?.status === 401) {
+    if (err.response?.status === 401 || err.response?.status === 403) {
       localStorage.clear();
       window.location.href = '/login';
     }
@@ -34,9 +40,7 @@ export const priceAPI = {
 };
 
 export const pestAPI = {
-  detect: (formData) => api.post('/api/pest/detect', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  }),
+  detect: (formData) => api.post('/api/pest/detect', formData),
   getHistory: () => api.get('/api/pest/history'),
 };
 

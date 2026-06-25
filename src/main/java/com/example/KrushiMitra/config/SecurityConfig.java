@@ -26,7 +26,7 @@ public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
     private final UserDetailsServiceImpl userDetailsService;
-    private CorsConfigurationSource corsConfigurationSource;
+    private final CorsConfigurationSource corsConfigurationSource;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -42,7 +42,6 @@ public class SecurityConfig {
                                 "/api/prices/**", // ✅ crop prices — PUBLIC
                                 "/h2-console/**", // ✅ H2 console if using H2
                                 "/api/weather/**",
-                                "/api/pest/**",
                                 "/api/chat/**", // ✅ ai crop doctor
                                 "/api/crops/**" // ✅ crop recommendation
 
