@@ -68,8 +68,6 @@ const Dashboard = () => {
   const { user } = useAuth();
   const lang = user?.preferredLanguage || 'en';
   const [pestCount, setPestCount] = useState(0);
-  const [price, setPrice] = useState(null);
-  const [weather, setWeather] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const hours = new Date().getHours();

@@ -27,28 +27,6 @@ const FACTOR_ICONS = {
   'बाजार मागणी (Market)': '📈',
 };
 
-/* ── score ring component ── */
-const ScoreRing = ({ score, size = 72, strokeWidth = 6 }) => {
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (score / 100) * circumference;
-  const color = score >= 80 ? '#1a6b2f' : score >= 60 ? '#e8a820' : '#c0392b';
-  return (
-    <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-      <circle cx={size / 2} cy={size / 2} r={radius}
-        fill="none" stroke="#e8f5ec" strokeWidth={strokeWidth} />
-      <circle cx={size / 2} cy={size / 2} r={radius}
-        fill="none" stroke={color} strokeWidth={strokeWidth}
-        strokeDasharray={circumference} strokeDashoffset={offset}
-        strokeLinecap="round"
-        style={{ transition: 'stroke-dashoffset 1s ease' }} />
-      <text x="50%" y="50%" textAnchor="middle" dy="0.35em"
-        style={{ transform: 'rotate(90deg)', transformOrigin: 'center', fontSize: size * 0.2, fontWeight: 800, fill: color, fontFamily: 'var(--font-display)' }}>
-        {score}
-      </text>
-    </svg>
-  );
-};
 
 /* ── mini progress bar ── */
 const MiniBar = ({ scored, max }) => {
@@ -61,8 +39,6 @@ const MiniBar = ({ scored, max }) => {
   );
 };
 
-/* ── medal helper ── */
-const MEDALS = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
 
 /* ── mapping translation helpers ── */
 /* ── mapping translation helpers ── */

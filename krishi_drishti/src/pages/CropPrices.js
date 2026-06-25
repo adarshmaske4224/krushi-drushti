@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import { priceAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
